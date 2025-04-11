@@ -79,7 +79,7 @@ const createRenderTarget = (gl: WebGL2RenderingContext, mesh: Mesh): RenderTarge
         positionVBO: positionVBO,
         normalVBO: normalVBO,
         uvVBO: uvVBO,
-        ibo: ibo!,
+        ibo: ibo,
         modelMatrix: mat4.identity(mat4.create()),
     }
 }
