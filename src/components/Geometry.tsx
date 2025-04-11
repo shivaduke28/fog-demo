@@ -1,54 +1,73 @@
 export interface Geometry {
-    vertices: Float32Array;
-    vertexCount: number;
-    indexBuffer?: Uint16Array;
+    positions: Float32Array;
+    normals: Float32Array;
+    uvs: Float32Array;
+    triangles: Uint16Array;
 }
 
 export function createTriangle(): Geometry {
-    const vertexData = new Float32Array(
+    const vertices = new Float32Array(
         [
-            // position, normal,   uv
             0.0, 1.0, 0.0,
-            0.0, 0.0, 1.0,
-            0.5, 1.0,
             - 1.0, -1.0, 0.0,
-            0.0, 0.0, 1.0,
-            0.0, 0.0,
             1.0, -1.0, 0.0,
+        ]
+    );
+
+    const normals = new Float32Array(
+        [
             0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+        ]);
+    const uvs = new Float32Array(
+        [
+            0.5, 1.0,
+            0.0, 0.0,
             1.0, 0.0
         ]
     );
 
     return {
-        vertices: vertexData,
-        vertexCount: 3
+        positions: vertices,
+        normals: normals,
+        uvs: uvs,
+        triangles: new Uint16Array(
+            [
+                0, 1, 2
+            ]
+        ),
     }
 }
 
 export function createQuad(): Geometry {
-    const vertexData = new Float32Array(
+    const positions = new Float32Array(
         [
-            // position, normal, uv
             -1.0, 1.0, 0.0,
-            0.0, 0.0, 1.0,
-            0.0, 1.0,
-            // position, normal, uv
             -1.0, -1.0, 0.0,
-            0.0, 0.0, 1.0,
-            0.0, 0.0,
-            // position, normal, uv
             1.0, -1.0, 0.0,
-            0.0, 0.0, 1.0,
-            1.0, 0.0,
-            // position, normal, uv
             1.0, 1.0, 0.0,
+        ]
+    );
+
+    const normals = new Float32Array(
+        [
             0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+        ]);
+    const uvs = new Float32Array(
+        [
+            0.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
             1.0, 1.0
         ]
     );
 
-    const indexBuffer = new Uint16Array(
+
+    const triangles = new Uint16Array(
         [
             0, 1, 2,
             0, 2, 3
@@ -56,96 +75,122 @@ export function createQuad(): Geometry {
     );
 
     return {
-        vertices: vertexData,
-        vertexCount: 4,
-        indexBuffer: indexBuffer
+        positions: positions,
+        normals: normals,
+        uvs: uvs,
+        triangles: triangles
     }
 }
 
 export function createCube(): Geometry {
-    const vertexData = new Float32Array(
+    const vertices = new Float32Array(
         [
             // front
             -1.0, -1.0, 1.0,
-            0.0, 0.0, 1.0,
-            0.0, 0.0,
             1.0, -1.0, 1.0,
-            0.0, 0.0, 1.0,
-            1.0, 0.0,
             1.0, 1.0, 1.0,
-            0.0, 0.0, 1.0,
-            1.0, 1.0,
             -1.0, 1.0, 1.0,
-            0.0, 0.0, 1.0,
-            0.0, 1.0,
             // back
             -1.0, -1.0, -1.0,
-            0.0, 0.0, -1.0,
-            1.0, 0.0,
             -1.0, 1.0, -1.0,
-            0.0, 0.0, -1.0,
-            0.0, 1.0,
             1.0, 1.0, -1.0,
-            0.0, 0.0, -1.0,
-            1.0, 1.0,
             1.0, -1.0, -1.0,
-            0.0, 0.0, -1.0,
-            0.0, 0.0,
             // left
             -1.0, -1.0, -1.0,
-            -1.0, 0.0, 0.0,
-            0.0, 0.0,
             -1.0, -1.0, 1.0,
-            -1.0, 0.0, 0.0,
-            0.0, 1.0,
             -1.0, 1.0, 1.0,
-            -1.0, 0.0, 0.0,
-            1.0, 1.0,
             -1.0, 1.0, -1.0,
-            -1.0, 0.0, 0.0,
-            1.0, 0.0,
             // right
             1.0, -1.0, -1.0,
-            1.0, 0.0, 0.0,
-            0.0, 0.0,
             1.0, 1.0, -1.0,
-            1.0, 0.0, 0.0,
-            0.0, 1.0,
             1.0, 1.0, 1.0,
-            1.0, 0.0, 0.0,
-            1.0, 1.0,
             1.0, -1.0, 1.0,
-            1.0, 0.0, 0.0,
-            0.0, 0.0,
             // top
             1.0, 1.0, -1.0,
-            0.0, 1.0, 0.0,
-            0.0, 0.0,
             -1.0, 1.0, -1.0,
-            0.0, 1.0, 0.0,
-            1.0, 0.0,
             -1.0, 1.0, 1.0,
-            0.0, 1.0, 0.0,
-            1.0, 1.0,
             1.0, 1.0, 1.0,
-            0.0, 1.0, 0.0,
-            1.0, 1.0,
             // bottom
             -1.0, -1.0, 1.0,
-            0.0, -1.0, 0.0,
-            0.0, 1.0,
             -1.0, -1.0, -1.0,
-            0.0, -1.0, 0.0,
-            0.0, 0.0,
             1.0, -1.0, -1.0,
-            0.0, -1.0, 0.0,
-            1.0, 0.0,
             1.0, -1.0, 1.0,
-            0.0, -1.0, 0.0,
-            1.0, 1.0
         ]);
 
-    const indexBuffer = new Uint16Array(
+    const normals = new Float32Array(
+        [
+            // front
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            // back
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+            // left
+
+            -1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+            // right
+            1.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+
+            1.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            // top
+            0.0, 1.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 1.0, 0.0,
+            // bottom
+            0.0, -1.0, 0.0,
+            0.0, -1.0, 0.0,
+            0.0, -1.0, 0.0,
+            0.0, -1.0, 0.0,
+        ]);
+
+    const uvs = new Float32Array(
+        [
+            // front
+            0.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            // back
+            0.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            // left
+            0.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            // right
+            0.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            // top
+            0.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+            // bottom
+            0.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
+            1.0, 1.0,
+        ]);
+
+
+
+
+    const triangles = new Uint16Array(
         [
             // front
             0, 1, 2,
@@ -169,8 +214,9 @@ export function createCube(): Geometry {
     );
 
     return {
-        vertices: vertexData,
-        vertexCount: 24,
-        indexBuffer: indexBuffer
+        positions: vertices,
+        normals: normals,
+        uvs: uvs,
+        triangles: triangles
     };
 }

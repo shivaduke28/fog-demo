@@ -42,17 +42,15 @@ const createProgram = (gl: WebGL2RenderingContext): WebGLProgram | null => {
     return program;
 }
 
-const createVBO = (gl: WebGL2RenderingContext, vertices: Float32Array): WebGLBuffer | null => {
+const createVBO = (gl: WebGL2RenderingContext, data: Float32Array): WebGLBuffer | null => {
     var vbo = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
     return vbo;
 }
 
-const createIBO = (gl: WebGL2RenderingContext, indices: Uint16Array | undefined): WebGLBuffer | null => {
-    if (!indices) return null;
-
+const createIBO = (gl: WebGL2RenderingContext, indices: Uint16Array ): WebGLBuffer | null => {
     var ibo = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
@@ -86,18 +84,20 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const timeLocation = gl.getUniformLocation(program, 'time');
 
         const mesh = createCube();
-        const vbo = createVBO(gl, mesh.vertices);
-        const ibo = createIBO(gl, mesh.indexBuffer!);
-
-        const stride = Float32Array.BYTES_PER_ELEMENT * (3 + 3 + 2);
+        const positionVBO = createVBO(gl, mesh.positions);
+        const normalVBO = createVBO(gl, mesh.normals);
+        const uvVBO = createVBO(gl, mesh.uvs);
+        const ibo = createIBO(gl, mesh.triangles!);
 
         // bufferをbindしてattributeを設定
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, stride, 0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionVBO);
+        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
         gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * 3);
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalVBO);
+        gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
         gl.enableVertexAttribArray(normalLocation);
-        gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * (3 + 3));
+        gl.bindBuffer(gl.ARRAY_BUFFER, uvVBO);
+        gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
         gl.enableVertexAttribArray(uvLocation);
 
         gl.enable(gl.CULL_FACE);
@@ -146,13 +146,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             const time = 1.0 / 60.0 * count;
             gl.uniform1f(timeLocation, time);
 
-            if (ibo) {
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-                gl.drawElements(gl.TRIANGLES, mesh.indexBuffer!.length, gl.UNSIGNED_SHORT, 0);
-            } else {
-                gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-                gl.drawArrays(gl.TRIANGLES, 0, 3);
-            }
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+            gl.drawElements(gl.TRIANGLES, mesh.triangles.length, gl.UNSIGNED_SHORT, 0);
             gl.flush();
 
             count = count + 1;
