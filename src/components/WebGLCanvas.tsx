@@ -64,29 +64,26 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
         const timeLocation = gl.getUniformLocation(program, 'time');
 
-        const vertices = new Float32Array([
-            0.0, 1.0, 0.0,
-            -1.0, -1.0, 0.0,
-            1.0, -1.0, 0.0,
-        ]);
+        const vertexData = new Float32Array(
+            [
+                // position, uv
+                0.0, 1.0, 0.0, 0.5, 1.0,
+                - 1.0, -1.0, 0.0, 0.0, 0.0,
+                1.0, -1.0, 0.0, 1.0, 0.0
+            ]
+        );
+
+        const stride = Float32Array.BYTES_PER_ELEMENT * (3 + 2);
         const buffer = gl.createBuffer();
+
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
 
+        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, stride, 0);
         gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
-        const uvData = new Float32Array([
-            0.5, 1.0,
-            0.0, 0.0,
-            1.0, 0.0
-        ]);
-
-        const uvBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, uvData, gl.STATIC_DRAW);
+        gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * 3);
         gl.enableVertexAttribArray(uvLocation);
-        gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
 
         // 行列
         const createMvpMatrix = (): mat4 => {
