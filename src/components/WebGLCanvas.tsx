@@ -4,6 +4,7 @@ import vertexShaderSource from '../shaders/vertex.vs?raw'
 import fragmentShaderSource from '../shaders/fragment.fs?raw'
 import { createCube } from './Geometry';
 import { createMesh, Mesh } from './Mesh';
+import { Pane } from 'tweakpane';
 
 type WebGLCanvasProps = {
     width?: number;
@@ -87,7 +88,37 @@ const createRenderTarget = (gl: WebGL2RenderingContext, mesh: Mesh): RenderTarge
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
+    const pane = new Pane();
+    const PARAMS = {
+        factor: 123,
+        title: 'hello',
+        color: '#ff0055',
+    };
+
+    pane.addBinding(PARAMS, 'factor');
+    pane.addBinding(PARAMS, 'title');
+    pane.addBinding(PARAMS, 'color').on('change', (ev) => {
+        const color = ev.value;
+        const r = parseInt(color.slice(1, 3), 16) / 255;
+        const g = parseInt(color.slice(3, 5), 16) / 255;
+        const b = parseInt(color.slice(5, 7), 16) / 255;
+        const color1 = vec3.fromValues(r, g, b);
+        if (cube1) {
+            cube1.mesh.color[0] = color1[0];
+            cube1.mesh.color[1] = color1[1];
+            cube1.mesh.color[2] = color1[2];
+            console.log(cube1.mesh.color);
+        }
+    });
+
+    let cube1: RenderTarget;
+
+    var hoge = 0;
+
     useEffect(() => {
+        console.log("hoge:", hoge);
+        hoge += 1;
+        console.log('useEffect');
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -120,6 +151,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         cubeMesh.color = vec4.fromValues(1, 0, 0, 1);
         const mesh = createRenderTarget(gl, cubeMesh);
         renderTargets.push(mesh);
+        cube1 = mesh;
 
         const cubeMesh2 = createMesh(cubeGeometry);
         cubeMesh2.position = vec3.fromValues(1.0, 0, 0);
@@ -196,7 +228,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
 
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, target.ibo);
                 gl.drawElements(gl.TRIANGLES, target.mesh.geomtry.triangles.length, gl.UNSIGNED_SHORT, 0);
-                gl.flush();
             }
 
             setTimeout(renderLoop, 1000 / 60);
