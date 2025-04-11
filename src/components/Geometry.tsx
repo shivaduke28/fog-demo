@@ -1,10 +1,10 @@
-export interface Mesh {
+export interface Geometry {
     vertices: Float32Array;
     vertexCount: number;
     indexBuffer?: Uint16Array;
 }
 
-export function createTriangle(): Mesh {
+export function createTriangle(): Geometry {
     const vertexData = new Float32Array(
         [
             // position, normal,   uv
@@ -26,7 +26,7 @@ export function createTriangle(): Mesh {
     }
 }
 
-export function createQuad(): Mesh {
+export function createQuad(): Geometry {
     const vertexData = new Float32Array(
         [
             // position, normal, uv
@@ -62,7 +62,7 @@ export function createQuad(): Mesh {
     }
 }
 
-export function createCube(): Mesh {
+export function createCube(): Geometry {
     const vertexData = new Float32Array(
         [
             // front

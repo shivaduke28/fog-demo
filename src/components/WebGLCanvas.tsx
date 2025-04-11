@@ -2,7 +2,7 @@ import { mat4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
 import vertexShaderSource from '../shaders/vertex.vs?raw'
 import fragmentShaderSource from '../shaders/fragment.fs?raw'
-import { createCube } from './Mesh';
+import { createCube } from './Geometry';
 
 type WebGLCanvasProps = {
     width?: number;
@@ -131,7 +131,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clearDepth(1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
+
             gl.useProgram(program);
 
             // update matrices
@@ -139,7 +139,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
 
             mat4.multiply(mvpMatrix, viewMatrix, modelMatrix);
             mat4.multiply(mvpMatrix, projectionMatrix, mvpMatrix);
-    
+
             gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
             gl.uniformMatrix4fv(modelLocation, false, modelMatrix);
 
@@ -161,7 +161,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
     }, []);
 
     return (
-        <canvas ref={canvasRef} width={width} height={height} />
+        <canvas ref={canvasRef} width={width} height={height} style={{
+            width: "100%",
+            height: "auto",
+        }} />
     );
 }
 
