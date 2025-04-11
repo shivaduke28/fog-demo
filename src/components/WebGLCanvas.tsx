@@ -12,7 +12,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const gl = canvas.getContext('webgl');
+        const gl = canvas.getContext('webgl2');
 
         if (!gl) {
             console.error('WebGLがサポートされていません');
