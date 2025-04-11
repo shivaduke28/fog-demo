@@ -22,8 +22,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             return;
         }
 
-        gl.clearColor(0, 0, 0, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
 
         const createShader = (type: number, source: string): WebGLShader | null => {
             const shader = gl.createShader(type);
@@ -56,9 +54,12 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             return;
         }
 
-        gl.useProgram(program);
+        const positionLocation = gl.getAttribLocation(program, 'position');
+        const uvLocation = gl.getAttribLocation(program, 'uv');
 
-        // positionのbuffer
+        const mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
+        const timeLocation = gl.getUniformLocation(program, 'time');
+
         const vertices = new Float32Array([
             0.0, 1.0, 0.0,
             -1.0, -1.0, 0.0,
@@ -66,11 +67,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         ]);
         const buffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferData
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-        // positionをattributeとしてセットする
-        const positionLocation = gl.getAttribLocation(program, 'position');
         gl.enableVertexAttribArray(positionLocation);
         gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
@@ -83,7 +81,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const uvBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, uvData, gl.STATIC_DRAW);
-        const uvLocation = gl.getAttribLocation(program, 'uv');
         gl.enableVertexAttribArray(uvLocation);
         gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
 
@@ -94,9 +91,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             const p = mat4.create();
             const mvp = mat4.create();
 
-            // modelは原点に置く
             mat4.identity(m);
-
             mat4.lookAt(v,
                 [0, 0, 5],
                 [0, 0, 0],
@@ -116,11 +111,25 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         }
 
         const mvp = createMvpMatrix();
-        var mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
-        gl.uniformMatrix4fv(mvpLocation, false, mvp);
 
-        gl.drawArrays(gl.TRIANGLES, 0, 3);
-        gl.flush();
+        let count = 0;
+
+        (function renderLoop() {
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.useProgram(program);
+            gl.uniformMatrix4fv(mvpLocation, false, mvp);
+
+            const time = 1.0 / 60.0 * count;
+            gl.uniform1f(timeLocation, time);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            gl.flush();
+
+            count = count + 1;
+            setTimeout(renderLoop, 1000 / 60);
+        })();
     }, []);
 
     return (
