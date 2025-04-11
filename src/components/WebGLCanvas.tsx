@@ -1,5 +1,7 @@
 import { mat4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
+import vertexShaderSource from '../shaders/vertex.vs?raw'
+import fragmentShaderSource from '../shaders/fragment.fs?raw'
 
 type WebGLCanvasProps = {
     width?: number;
@@ -22,20 +24,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
 
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
-
-        const vertexShaderSource = `
-        attribute vec3 position;
-        uniform mat4 mvpMatrix;
-        void main() {
-            gl_Position = mvpMatrix * vec4(position, 1.0);
-        }
-        `;
-
-        const fragmentShaderSource = `
-        void main() {
-          gl_FragColor = vec4(1.0, 0.0, 0.0,1.0);
-        }
-        `;
 
         const createShader = (type: number, source: string): WebGLShader | null => {
             const shader = gl.createShader(type);
