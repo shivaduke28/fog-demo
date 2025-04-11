@@ -74,6 +74,19 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         gl.enableVertexAttribArray(positionLocation);
         gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
+        const uvData = new Float32Array([
+            0.5, 1.0,
+            0.0, 0.0,
+            1.0, 0.0
+        ]);
+
+        const uvBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, uvData, gl.STATIC_DRAW);
+        const uvLocation = gl.getAttribLocation(program, 'uv');
+        gl.enableVertexAttribArray(uvLocation);
+        gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 0, 0);
+
         // 行列
         const createMvpMatrix = (): mat4 => {
             const m = mat4.create();
