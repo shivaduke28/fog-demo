@@ -23,7 +23,6 @@ vec2 rot(vec2 p, float t) {
 
 void main() {
     vec3 pos = position;
-    pos.xz = rot(pos.xz, time);
     gl_Position = mvpMatrix * vec4(pos, 1.0f);
     vOut.uv = uv;
     vOut.normal = normalize(modelMatrix * vec4(normal, 0.0f)).xyz;

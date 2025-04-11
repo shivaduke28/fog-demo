@@ -2,7 +2,7 @@ import { mat4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
 import vertexShaderSource from '../shaders/vertex.vs?raw'
 import fragmentShaderSource from '../shaders/fragment.fs?raw'
-import { createQuad, createTriangle } from './Mesh';
+import { createCube } from './Mesh';
 
 type WebGLCanvasProps = {
     width?: number;
@@ -82,9 +82,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const uvLocation = gl.getAttribLocation(program, 'uv');
 
         const mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
+        const modelLocation = gl.getUniformLocation(program, 'modelMatrix');
         const timeLocation = gl.getUniformLocation(program, 'time');
 
-        const mesh = createQuad();
+        const mesh = createCube();
         const vbo = createVBO(gl, mesh.vertices);
         const ibo = createIBO(gl, mesh.indexBuffer!);
 
@@ -103,33 +104,26 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
 
-        // 行列
-        const createMvpMatrix = (): mat4 => {
-            const m = mat4.create();
-            const v = mat4.create();
-            const p = mat4.create();
-            const mvp = mat4.create();
 
-            mat4.identity(m);
-            mat4.lookAt(v,
-                [0, 0, 5],
-                [0, 0, 0],
-                [0, 1, 0]
-            );
+        const modelMatrix = mat4.create();
+        const viewMatrix = mat4.create();
+        const projectionMatrix = mat4.create();
+        const mvpMatrix = mat4.create();
 
-            mat4.perspective(p,
-                Math.PI / 3,
-                width / height,
-                .01,
-                100
-            );
+        mat4.identity(modelMatrix);
+        mat4.lookAt(viewMatrix,
+            [0, 0, 5],
+            [0, 0, 0],
+            [0, 1, 0]
+        );
 
-            mat4.multiply(mvp, v, m);
-            mat4.multiply(mvp, p, mvp);
-            return mvp;
-        }
+        mat4.perspective(projectionMatrix,
+            Math.PI / 3,
+            width / height,
+            .01,
+            100
+        );
 
-        const mvp = createMvpMatrix();
 
         let count = 0;
 
@@ -139,7 +133,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
             gl.useProgram(program);
-            gl.uniformMatrix4fv(mvpLocation, false, mvp);
+
+            // update matrices
+            mat4.rotateY(modelMatrix, modelMatrix, 0.01);
+
+            mat4.multiply(mvpMatrix, viewMatrix, modelMatrix);
+            mat4.multiply(mvpMatrix, projectionMatrix, mvpMatrix);
+    
+            gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
+            gl.uniformMatrix4fv(modelLocation, false, modelMatrix);
 
             const time = 1.0 / 60.0 * count;
             gl.uniform1f(timeLocation, time);
