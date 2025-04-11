@@ -8,10 +8,16 @@ export interface Mesh {
 export function createTriangle(): Mesh {
     const vertexData = new Float32Array(
         [
-            // position, uv
-            0.0, 1.0, 0.0, 0.5, 1.0,
-            - 1.0, -1.0, 0.0, 0.0, 0.0,
-            1.0, -1.0, 0.0, 1.0, 0.0
+            // position, normal,   uv
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+            0.5, 1.0,
+            - 1.0, -1.0, 0.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0,
+            1.0, -1.0, 0.0,
+            0.0, 0.0, 1.0,
+            1.0, 0.0
         ]
     );
 
@@ -24,11 +30,22 @@ export function createTriangle(): Mesh {
 export function createQuad(): Mesh {
     const vertexData = new Float32Array(
         [
-            // position, uv
-            -1.0, 1.0, 0.0, 0.0, 1.0,
-            -1.0, -1.0, 0.0, 0.0, 0.0,
-            1.0, -1.0, 0.0, 1.0, 0.0,
-            1.0, 1.0, 0.0, 1.0, 1.0
+            // position, normal, uv
+            -1.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+            0.0, 1.0,
+            // position, normal, uv
+            -1.0, -1.0, 0.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0,
+            // position, normal, uv
+            1.0, -1.0, 0.0,
+            0.0, 0.0, 1.0,
+            1.0, 0.0,
+            // position, normal, uv
+            1.0, 1.0, 0.0,
+            0.0, 0.0, 1.0,
+            1.0, 1.0
         ]
     );
 

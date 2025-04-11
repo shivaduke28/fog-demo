@@ -78,6 +78,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         if (!program) return;
 
         const positionLocation = gl.getAttribLocation(program, 'position');
+        const normalLocation = gl.getAttribLocation(program, 'normal');
         const uvLocation = gl.getAttribLocation(program, 'uv');
 
         const mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
@@ -87,14 +88,20 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const vbo = createVBO(gl, mesh.vertices);
         const ibo = createIBO(gl, mesh.indexBuffer!);
 
-        const stride = Float32Array.BYTES_PER_ELEMENT * (3 + 2);
+        const stride = Float32Array.BYTES_PER_ELEMENT * (3 + 3 + 2);
 
         // bufferをbindしてattributeを設定
         gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
         gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, stride, 0);
         gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * 3);
+        gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * 3);
+        gl.enableVertexAttribArray(normalLocation);
+        gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * (3 + 3));
         gl.enableVertexAttribArray(uvLocation);
+
+        gl.enable(gl.CULL_FACE);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
 
         // 行列
         const createMvpMatrix = (): mat4 => {
@@ -127,9 +134,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         let count = 0;
 
         (function renderLoop() {
-            gl.clearColor(0, 0, 0, 1);
-            gl.clear(gl.COLOR_BUFFER_BIT);
-
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clearDepth(1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    
             gl.useProgram(program);
             gl.uniformMatrix4fv(mvpLocation, false, mvp);
 
