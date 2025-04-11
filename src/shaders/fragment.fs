@@ -1,9 +1,14 @@
 #version 300 es
 precision mediump float;
 
-in vec2 vertUv;
+struct VertexOutput {
+    vec2 uv;
+};
+
+in VertexOutput vOut;
 out vec4 fragColor;
 
 void main() {
-  fragColor = vec4(vertUv.x, vertUv.y, 0, 1.0);
+  vec2 uv = vOut.uv;
+  fragColor = vec4(uv.x, uv.y, 0, 1.0);
 }
