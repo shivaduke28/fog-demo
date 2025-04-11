@@ -1,4 +1,4 @@
-import { mat4, quat, vec3 } from 'gl-matrix';
+import { mat4, quat, vec3, vec4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
 import vertexShaderSource from '../shaders/vertex.vs?raw'
 import fragmentShaderSource from '../shaders/fragment.fs?raw'
@@ -108,6 +108,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
         const modelLocation = gl.getUniformLocation(program, 'modelMatrix');
         const timeLocation = gl.getUniformLocation(program, 'time');
+        const colorLocation = gl.getUniformLocation(program, 'color');
 
         const renderTargets: RenderTarget[] = [];
 
@@ -116,18 +117,21 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const cubeMesh = createMesh(cubeGeometry);
         cubeMesh.position = vec3.fromValues(-1.0, 0, 0);
         cubeMesh.scale = vec3.fromValues(0.5, 0.5, 0.5);
+        cubeMesh.color = vec4.fromValues(1, 0, 0, 1);
         const mesh = createRenderTarget(gl, cubeMesh);
         renderTargets.push(mesh);
 
         const cubeMesh2 = createMesh(cubeGeometry);
         cubeMesh2.position = vec3.fromValues(1.0, 0, 0);
         cubeMesh2.scale = vec3.fromValues(0.5, 0.5, 0.5);
+        cubeMesh2.color = vec4.fromValues(0, 1, 0, 1);
         const mesh2 = createRenderTarget(gl, cubeMesh2);
         renderTargets.push(mesh2);
 
         const cubeMesh3 = createMesh(cubeGeometry);
         cubeMesh3.position = vec3.fromValues(0, 0, -10);
         cubeMesh3.scale = vec3.fromValues(3, 3, 3);
+        cubeMesh3.color = vec4.fromValues(0, 0, 1, 1);
         const mesh3 = createRenderTarget(gl, cubeMesh3);
         renderTargets.push(mesh3);
 
@@ -181,6 +185,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
 
                 gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
                 gl.uniformMatrix4fv(modelLocation, false, modelMatrix);
+                gl.uniform4fv(colorLocation, target.mesh.color);
 
                 const time = 1.0 / 60.0 * count;
                 gl.uniform1f(timeLocation, time);

@@ -1,4 +1,4 @@
-import { mat4, quat, vec3 } from "gl-matrix";
+import { mat4, quat, vec3, vec4 } from "gl-matrix";
 import { Geometry } from "./Geometry";
 
 export interface Mesh {
@@ -6,6 +6,7 @@ export interface Mesh {
     position: vec3;
     rotation: quat
     scale: vec3;
+    color: vec4;
     modelMatrix(): mat4;
 }
 
@@ -14,6 +15,7 @@ class MeshImpl implements Mesh {
     position: vec3;
     rotation: quat;
     scale: vec3;
+    color: vec4;
     private mat: mat4;
 
     modelMatrix() { 
@@ -26,6 +28,7 @@ class MeshImpl implements Mesh {
         this.position = vec3.fromValues(0, 0, 0);
         this.rotation = quat.create();
         this.scale = vec3.fromValues(1, 1, 1);
+        this.color = vec4.fromValues(1, 1, 1, 1);
         this.mat = mat4.create();
     }
 }
