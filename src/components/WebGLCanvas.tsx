@@ -88,6 +88,7 @@ const createRenderTarget = (gl: WebGL2RenderingContext, mesh: Mesh): RenderTarge
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
+    // 仮実装
     const pane = new Pane();
     const PARAMS = {
         factor: 123,
@@ -102,23 +103,21 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const r = parseInt(color.slice(1, 3), 16) / 255;
         const g = parseInt(color.slice(3, 5), 16) / 255;
         const b = parseInt(color.slice(5, 7), 16) / 255;
-        const color1 = vec3.fromValues(r, g, b);
         if (cube1) {
-            cube1.mesh.color[0] = color1[0];
-            cube1.mesh.color[1] = color1[1];
-            cube1.mesh.color[2] = color1[2];
-            console.log(cube1.mesh.color);
+            cube1.mesh.color[0] = r;
+            cube1.mesh.color[1] = g;
+            cube1.mesh.color[2] = b;
         }
     });
 
+    // paneから触る用（仮）
     let cube1: RenderTarget;
 
-    var hoge = 0;
-
+    // to avoid render loop run twice (becase of strict mode)
+    var initialized = false;
     useEffect(() => {
-        console.log("hoge:", hoge);
-        hoge += 1;
-        console.log('useEffect');
+        if (initialized) return;
+        initialized = true;
         const canvas = canvasRef.current;
         if (!canvas) return;
 
