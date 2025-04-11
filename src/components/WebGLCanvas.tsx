@@ -157,11 +157,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         );
 
         let count = 0;
+        let time = 0.0;
+
 
         (function renderLoop() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clearDepth(1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            count += 1;
+            time = 1.0 / 60.0 * count;
 
             gl.useProgram(program);
 
@@ -176,6 +180,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
                 gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
                 gl.enableVertexAttribArray(uvLocation);
 
+                vec3.add(target.mesh.position, target.mesh.position, vec3.fromValues(0, Math.sin(time) * 0.01, 0.0));
                 // rotate object
                 quat.rotateY(target.mesh.rotation, target.mesh.rotation, 0.01);
 
@@ -187,7 +192,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
                 gl.uniformMatrix4fv(modelLocation, false, modelMatrix);
                 gl.uniform4fv(colorLocation, target.mesh.color);
 
-                const time = 1.0 / 60.0 * count;
                 gl.uniform1f(timeLocation, time);
 
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, target.ibo);
@@ -195,7 +199,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
                 gl.flush();
             }
 
-            count = count + 1;
             setTimeout(renderLoop, 1000 / 60);
         })();
     }, []);
