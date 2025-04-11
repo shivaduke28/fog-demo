@@ -1,3 +1,4 @@
+import { mat4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
 
 type WebGLCanvasProps = {
@@ -23,9 +24,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         const vertexShaderSource = `
-        attribute vec4 position;
+        attribute vec3 position;
+        uniform mat4 mvpMatrix;
         void main() {
-            gl_Position = position;
+            gl_Position = mvpMatrix * vec4(position, 1.0);
         }
         `;
 
@@ -68,22 +70,56 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
 
         gl.useProgram(program);
 
+        // positionのbuffer
         const vertices = new Float32Array([
-            0.0, 1.0,
-            -1.0, -1.0,
-            1.0, -1.0,
+            0.0, 1.0, 0.0,
+            -1.0, -1.0, 0.0,
+            1.0, -1.0, 0.0,
         ]);
-
         const buffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        // 何？
+        // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/bufferData
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
+        // positionをattributeとしてセットする
         const positionLocation = gl.getAttribLocation(program, 'position');
         gl.enableVertexAttribArray(positionLocation);
-        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+
+        // 行列
+        const createMvpMatrix = (): mat4 => {
+            const m = mat4.create();
+            const v = mat4.create();
+            const p = mat4.create();
+            const mvp = mat4.create();
+
+            // modelは原点に置く
+            mat4.identity(m);
+
+            mat4.lookAt(v,
+                [0, 0, 5],
+                [0, 0, 0],
+                [0, 1, 0]
+            );
+
+            mat4.perspective(p,
+                Math.PI / 3,
+                width / height,
+                .01,
+                100
+            );
+
+            mat4.multiply(mvp, v, m);
+            mat4.multiply(mvp, p, mvp);
+            return mvp;
+        }
+
+        const mvp = createMvpMatrix();
+        var mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
+        gl.uniformMatrix4fv(mvpLocation, false, mvp);
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.flush();
     }, []);
 
     return (
