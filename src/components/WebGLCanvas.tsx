@@ -2,6 +2,7 @@ import { mat4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
 import vertexShaderSource from '../shaders/vertex.vs?raw'
 import fragmentShaderSource from '../shaders/fragment.fs?raw'
+import { createQuad, createTriangle } from './Mesh';
 
 type WebGLCanvasProps = {
     width?: number;
@@ -41,6 +42,24 @@ const createProgram = (gl: WebGL2RenderingContext): WebGLProgram | null => {
     return program;
 }
 
+const createVBO = (gl: WebGL2RenderingContext, vertices: Float32Array): WebGLBuffer | null => {
+    var vbo = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    return vbo;
+}
+
+const createIBO = (gl: WebGL2RenderingContext, indices: Uint16Array | undefined): WebGLBuffer | null => {
+    if (!indices) return null;
+
+    var ibo = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    return ibo;
+}
+
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -64,24 +83,16 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
         const timeLocation = gl.getUniformLocation(program, 'time');
 
-        const vertexData = new Float32Array(
-            [
-                // position, uv
-                0.0, 1.0, 0.0, 0.5, 1.0,
-                - 1.0, -1.0, 0.0, 0.0, 0.0,
-                1.0, -1.0, 0.0, 1.0, 0.0
-            ]
-        );
+        const mesh = createQuad();
+        const vbo = createVBO(gl, mesh.vertices);
+        const ibo = createIBO(gl, mesh.indexBuffer!);
 
         const stride = Float32Array.BYTES_PER_ELEMENT * (3 + 2);
-        const buffer = gl.createBuffer();
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
-
+        // bufferをbindしてattributeを設定
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
         gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, stride, 0);
         gl.enableVertexAttribArray(positionLocation);
-
         gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * 3);
         gl.enableVertexAttribArray(uvLocation);
 
@@ -125,7 +136,13 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             const time = 1.0 / 60.0 * count;
             gl.uniform1f(timeLocation, time);
 
-            gl.drawArrays(gl.TRIANGLES, 0, 3);
+            if (ibo) {
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+                gl.drawElements(gl.TRIANGLES, mesh.indexBuffer!.length, gl.UNSIGNED_SHORT, 0);
+            } else {
+                gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+                gl.drawArrays(gl.TRIANGLES, 0, 3);
+            }
             gl.flush();
 
             count = count + 1;
