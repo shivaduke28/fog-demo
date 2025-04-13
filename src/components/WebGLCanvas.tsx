@@ -105,7 +105,6 @@ type RenderTarget = {
     normalVBO: WebGLBuffer,
     uvVBO: WebGLBuffer,
     ibo: WebGLBuffer,
-    modelMatrix: mat4,
 }
 
 const createRenderTarget = (gl: WebGL2RenderingContext, mesh: Mesh): RenderTarget => {
@@ -120,7 +119,6 @@ const createRenderTarget = (gl: WebGL2RenderingContext, mesh: Mesh): RenderTarge
         normalVBO: normalVBO,
         uvVBO: uvVBO,
         ibo: ibo,
-        modelMatrix: mat4.identity(mat4.create()),
     }
 }
 
@@ -167,7 +165,6 @@ const bindUniforms = (gl: WebGL2RenderingContext, program: ShaderProgram, render
     gl.uniform4fv(uniformLocations.color, renderTarget.mesh.color);
     gl.uniform1f(uniformLocations.time, uniforms.time);
 }
-
 
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
