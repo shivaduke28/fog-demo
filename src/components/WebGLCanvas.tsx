@@ -1,8 +1,8 @@
-import { mat4, quat, vec3, vec4 } from 'gl-matrix';
+import { mat4, vec3, vec4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
 import vertexShaderSource from '../shaders/vertex.vs?raw'
 import fragmentShaderSource from '../shaders/fragment.fs?raw'
-import { createCube, createQuad, flipNormal } from './Geometry';
+import { createCube, flipNormal } from './Geometry';
 import { createMesh, Mesh } from './Mesh';
 import { Pane } from 'tweakpane';
 
@@ -23,6 +23,9 @@ type ShaderProgram = {
         modelMatrix: WebGLUniformLocation | null,
         time: WebGLUniformLocation | null,
         color: WebGLUniformLocation | null,
+        cameraPosition: WebGLUniformLocation | null,
+        uniformDensity: WebGLUniformLocation | null,
+        uniformColor: WebGLUniformLocation | null,
     }
 }
 
@@ -64,16 +67,19 @@ const createShaderProgram = (gl: WebGL2RenderingContext): ShaderProgram | null =
     if (!program) return null;
 
     const attributeLocations = {
-        position: gl.getAttribLocation(program, 'position'),
-        normal: gl.getAttribLocation(program, 'normal'),
-        uv: gl.getAttribLocation(program, 'uv'),
+        position: gl.getAttribLocation(program, 'a_position'),
+        normal: gl.getAttribLocation(program, 'a_normal'),
+        uv: gl.getAttribLocation(program, 'a_uv'),
     };
 
     const uniformLocations = {
-        mvpMatrix: gl.getUniformLocation(program, 'mvpMatrix'),
-        modelMatrix: gl.getUniformLocation(program, 'modelMatrix'),
-        time: gl.getUniformLocation(program, 'time'),
-        color: gl.getUniformLocation(program, 'color'),
+        mvpMatrix: gl.getUniformLocation(program, 'u_mvpMatrix'),
+        modelMatrix: gl.getUniformLocation(program, 'u_modelMatrix'),
+        time: gl.getUniformLocation(program, 'u_time'),
+        color: gl.getUniformLocation(program, 'u_color'),
+        uniformDensity: gl.getUniformLocation(program, 'u_uniformDensity'),
+        cameraPosition: gl.getUniformLocation(program, 'u_cameraPosition'),
+        uniformColor: gl.getUniformLocation(program, 'u_uniformColor'),
     };
 
     return {
@@ -144,11 +150,15 @@ type Uniforms = {
     mvpMatrix: mat4,
     time: number,
     color: vec4,
+    uniformDensity: number,
+    cameraPosition: vec3,
+    uniformColor: vec3,
 }
 
 type Camera = {
     position: vec3,
     lookAt: vec3,
+    up: vec3,
 }
 
 type Scene = {
@@ -191,13 +201,17 @@ const createScene = (gl: WebGL2RenderingContext): Scene => {
     return {
         renderTargets,
         camera: {
-            position: vec3.fromValues(20, 20, 20),
-            lookAt: vec3.fromValues(0, 0, 0),
+            position: vec3.fromValues(30, 30, 30),
+            lookAt: vec3.fromValues(0, 5, 0),
+            up: vec3.fromValues(0, 1, 0),
         }
     }
 }
 
-const bindUniforms = (gl: WebGL2RenderingContext, program: ShaderProgram, renderTarget: RenderTarget, uniforms: Uniforms) => {
+const bindUniforms = (gl: WebGL2RenderingContext,
+    program: ShaderProgram,
+    renderTarget: RenderTarget,
+    uniforms: Uniforms) => {
     const uniformLocations = program.uniformLocations;
     const modelMatrix = uniforms.modelMatrix;
     const mvpMatrix = uniforms.mvpMatrix;
@@ -215,6 +229,9 @@ const bindUniforms = (gl: WebGL2RenderingContext, program: ShaderProgram, render
     gl.uniformMatrix4fv(uniformLocations.modelMatrix, false, modelMatrix);
     gl.uniform4fv(uniformLocations.color, renderTarget.mesh.color);
     gl.uniform1f(uniformLocations.time, uniforms.time);
+    gl.uniform1f(uniformLocations.uniformDensity, uniforms.uniformDensity);
+    gl.uniform3fv(uniformLocations.cameraPosition, uniforms.cameraPosition);
+    gl.uniform3fv(uniformLocations.uniformColor, uniforms.uniformColor);
 }
 
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
@@ -223,19 +240,40 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
     // 仮実装
     const pane = new Pane();
     const PARAMS = {
-        factor: 123,
-        title: 'hello',
-        color: '#ff0055',
+        fogColor: '#000000',
+        uniformDensity: 0.01
     };
 
-    pane.addBinding(PARAMS, 'factor');
-    pane.addBinding(PARAMS, 'title');
-    pane.addBinding(PARAMS, 'color').on('change', (ev) => {
+    let uniforms: Uniforms = {
+        modelMatrix: mat4.create(),
+        viewMatrix: mat4.create(),
+        projectionMatrix: mat4.perspective(mat4.create(),
+            Math.PI / 4,
+            width / height,
+            .01,
+            100
+        ),
+        mvpMatrix: mat4.create(),
+        time: 0.0,
+        color: vec4.fromValues(1, 1, 1, 1),
+        uniformDensity: 0.01,
+        cameraPosition: vec3.create(),
+        uniformColor: vec3.create(),
+    };
+
+    pane.addBinding(PARAMS, 'fogColor').on('change', (ev) => {
         const color = ev.value;
         const r = parseInt(color.slice(1, 3), 16) / 255;
         const g = parseInt(color.slice(3, 5), 16) / 255;
         const b = parseInt(color.slice(5, 7), 16) / 255;
-        console.log(r, g, b);
+        vec3.set(uniforms.uniformColor, r, g, b);
+    });
+
+    pane.addBinding(PARAMS, 'uniformDensity',
+        { min: 0, max: 0.1, step: 0.0001 }
+    ).on('change', (ev) => {
+        const density = ev.value;
+        uniforms.uniformDensity = density;
     });
 
     // to avoid render loop run twice (becase of strict mode)
@@ -263,25 +301,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
 
-
-        let uniforms: Uniforms = {
-            modelMatrix: mat4.create(),
-            viewMatrix: mat4.lookAt(mat4.create(),
-                scene.camera.position,
-                scene.camera.lookAt,
-                [0, 1, 0]
-            ),
-            projectionMatrix: mat4.perspective(mat4.create(),
-                Math.PI / 3,
-                width / height,
-                .01,
-                100
-            ),
-            mvpMatrix: mat4.create(),
-            time: 0.0,
-            color: vec4.fromValues(1, 1, 1, 1),
-        };
-
         let loopCount = 0;
         const FPS = 60;
         const FPSInv = 1.0 / FPS;
@@ -295,12 +314,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
 
             gl.useProgram(shaderProgram.program);
 
+            // update camera
+            vec3.copy(uniforms.cameraPosition, scene.camera.position);
+            mat4.lookAt(uniforms.viewMatrix,
+                scene.camera.position,
+                scene.camera.lookAt,
+                scene.camera.up
+            );
+
             for (const target of renderTargets) {
-
-                // animation
-                // vec3.add(target.mesh.position, target.mesh.position, vec3.fromValues(0, Math.sin(uniforms.time) * 0.01, 0.0));
-                // quat.rotateY(target.mesh.rotation, target.mesh.rotation, 0.01);
-
                 bindAttributes(gl, shaderProgram, target);
                 bindUniforms(gl, shaderProgram, target, uniforms);
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, target.ibo);
