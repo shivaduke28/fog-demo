@@ -36,7 +36,7 @@ float heightFogTransmittance(
 
 void main() {
   vec2 uv = v_out.uv;
-  vec3 l = normalize(vec3(0.0f, 1.0f, 1.5f));
+  vec3 l = normalize(vec3(0.2, 1.0, .5));
   vec3 n = normalize(v_out.normal);
   vec3 col = vec3(1.0f) * u_color.rgb;
   col *= max(0.0f, dot(n, l));

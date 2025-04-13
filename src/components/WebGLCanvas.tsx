@@ -79,39 +79,33 @@ const createScene = (gl: WebGL2RenderingContext): Scene => {
     const renderTargets: RenderTarget[] = [];
 
     const cubeGeometry = createCube();
-    const cubeMesh = createMesh(cubeGeometry);
-    cubeMesh.position = vec3.fromValues(-1.0, 0, 0);
-    cubeMesh.scale = vec3.fromValues(0.5, 0.5, 0.5);
-    cubeMesh.color = vec4.fromValues(1, 0, 0, 1);
-    const mesh = createRenderTarget(gl, cubeMesh);
-    renderTargets.push(mesh);
-
-    const cubeMesh2 = createMesh(cubeGeometry);
-    cubeMesh2.position = vec3.fromValues(1.0, 0, 0);
-    cubeMesh2.scale = vec3.fromValues(0.5, 0.5, 0.5);
-    cubeMesh2.color = vec4.fromValues(0, 1, 0, 1);
-    const mesh2 = createRenderTarget(gl, cubeMesh2);
-    renderTargets.push(mesh2);
-
-    const cubeMesh3 = createMesh(cubeGeometry);
-    cubeMesh3.position = vec3.fromValues(0, 0, -5);
-    cubeMesh3.scale = vec3.fromValues(3, 3, 3);
-    cubeMesh3.color = vec4.fromValues(0, 0, 1, 1);
-    const mesh3 = createRenderTarget(gl, cubeMesh3);
-    renderTargets.push(mesh3);
+    const count = 10;
+    for (let i = 0; i < count; i++) {
+        for (let j = 0; j < count; j++) {
+            const x = (i - 0.5 * (count-1.0)) * 4;
+            const z = (j - 0.5 * (count-1.0)) * 4;
+            const cubeMesh = createMesh(cubeGeometry);
+            cubeMesh.position = vec3.fromValues(x, 4, z);
+            cubeMesh.scale = vec3.fromValues(0.5, 8, 0.5);
+            vec4.set(cubeMesh.color, 1, 1, 1, 1);
+            const mesh = createRenderTarget(gl, cubeMesh);
+            renderTargets.push(mesh);
+        }
+    }
 
     const cubeFlipped = flipNormal(cubeGeometry);
     const quadMesh = createMesh(cubeFlipped);
     vec3.set(quadMesh.position, 0, 5, 0);
-    vec3.set(quadMesh.scale, 10, 10, 10);
+    vec3.set(quadMesh.scale, 20, 10, 20);
+    vec4.set(quadMesh.color, 0.8, 0.8, 0.8, 1);
     const quadMeshRenderTarget = createRenderTarget(gl, quadMesh);
     renderTargets.push(quadMeshRenderTarget);
 
     return {
         renderTargets,
         camera: {
-            position: vec3.fromValues(30, 30, 30),
-            lookAt: vec3.fromValues(0, 5, 0),
+            position: vec3.fromValues(45, 30, 30),
+            lookAt: vec3.fromValues(0, 8, 0),
             up: vec3.fromValues(0, 1, 0),
         }
     }
@@ -133,18 +127,23 @@ const updateUniforms = (renderTarget: RenderTarget,
     vec4.copy(uniforms.color, renderTarget.mesh.color);
 }
 
-const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
+const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const pane = new Pane();
     let uniforms: Uniforms = {
         modelMatrix: mat4.create(),
         viewMatrix: mat4.create(),
-        projectionMatrix: mat4.perspective(mat4.create(),
-            Math.PI / 4,
-            width / height,
-            .01,
-            100
+        // projectionMatrix: mat4.perspective(mat4.create(),
+        //     Math.PI / 3,
+        //     width / height,
+        //     .01,
+        //     100
+        // ),
+        projectionMatrix: mat4.ortho(mat4.create(),
+            -15, 15,
+            -15, 15,
+            -100, 200
         ),
         mvpMatrix: mat4.create(),
         time: 0.0,
@@ -167,7 +166,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
     };
 
     pane.addBinding(PARAMS, 'baseHeight',
-        { min: -10, max: 10, step: 0.01 }
+        { min: -10, max: 20, step: 0.01 }
     ).on('change', (ev) => {
         const baseHeight = ev.value;
         uniforms.baseHeight = baseHeight;
@@ -181,7 +180,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
     });
 
     pane.addBinding(PARAMS, 'fallOff',
-        { min: 0, max: 1, step: 0.001 }
+        { min: 0.001, max: 2, step: 0.001 }
     ).on('change', (ev) => {
         const fallOff = ev.value;
         uniforms.fallOff = fallOff;

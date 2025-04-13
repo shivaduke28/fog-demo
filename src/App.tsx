@@ -5,7 +5,7 @@ function App() {
   return (
     <>
       <h1>Fog Demo</h1>
-      <WebGLCanvas width={800} height={600} />
+      <WebGLCanvas width={1080} height={720} />
     </>
   )
 }
