@@ -166,7 +166,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         time: 0.0,
         color: vec4.fromValues(1, 1, 1, 1),
         uniformDensity: 0.0,
-        cameraPosition: vec3.create(),
+        cameraPosition: vec3.fromValues(40, 40, 30),
         uniformColor: vec3.fromValues(0.5, 0.5, 0.5),
         baseHeight: 8.0,
         density: 0.1,
@@ -179,43 +179,46 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         density: uniforms.density,
         fallOff: uniforms.fallOff,
         uniformDensity: uniforms.uniformDensity,
-        fogColor: '#888888',
+        fogColor: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
+        cameraPosition: { x: uniforms.cameraPosition[0], y: uniforms.cameraPosition[1], z: uniforms.cameraPosition[2] },
     };
 
     pane.addBinding(PARAMS, 'baseHeight',
-        { min: 0, max: 20, step: 0.01 }
+        { min: 0, max: 20 }
     ).on('change', (ev) => {
         const baseHeight = ev.value;
         uniforms.baseHeight = baseHeight;
     });
 
     pane.addBinding(PARAMS, 'density',
-        { min: 0, max: 1, step: 0.01 }
+        { min: 0, max: 1 }
     ).on('change', (ev) => {
         const density = ev.value;
         uniforms.density = density;
     });
 
     pane.addBinding(PARAMS, 'fallOff',
-        { min: 0.001, max: 2, step: 0.001 }
+        { min: 0.001, max: 2 }
     ).on('change', (ev) => {
         const fallOff = ev.value;
         uniforms.fallOff = fallOff;
     });
 
     pane.addBinding(PARAMS, 'uniformDensity',
-        { min: 0, max: 0.1, step: 0.0001 }
+        { min: 0, max: 0.1 }
     ).on('change', (ev) => {
         const density = ev.value;
         uniforms.uniformDensity = density;
     });
 
-    pane.addBinding(PARAMS, 'fogColor').on('change', (ev) => {
+    pane.addBinding(PARAMS, 'fogColor', { color: { type: 'float' } }).on('change', (ev) => {
         const color = ev.value;
-        const r = parseInt(color.slice(1, 3), 16) / 255;
-        const g = parseInt(color.slice(3, 5), 16) / 255;
-        const b = parseInt(color.slice(5, 7), 16) / 255;
-        vec3.set(uniforms.uniformColor, r, g, b);
+        vec3.set(uniforms.uniformColor, color.r, color.g, color.b);
+    });
+
+    pane.addBinding(PARAMS, 'cameraPosition').on('change', (ev) => {
+        const position = ev.value;
+        vec3.set(uniforms.cameraPosition, position.x, position.y, position.z);
     });
 
     // to avoid render loop run twice (becase of strict mode)
@@ -257,9 +260,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
             gl.useProgram(shaderProgram.program);
 
             // update camera
-            vec3.copy(uniforms.cameraPosition, scene.camera.position);
+            // vec3.copy(uniforms.cameraPosition, scene.camera.position);
             mat4.lookAt(uniforms.viewMatrix,
-                scene.camera.position,
+                uniforms.cameraPosition,
                 scene.camera.lookAt,
                 scene.camera.up
             );
