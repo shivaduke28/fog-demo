@@ -146,6 +146,39 @@ type Uniforms = {
     color: vec4,
 }
 
+type Scene = {
+    renderTargets: RenderTarget[],
+}
+
+const createScene = (gl: WebGL2RenderingContext): Scene => {
+    const renderTargets: RenderTarget[] = [];
+    const cubeGeometry = createCube();
+    const cubeMesh = createMesh(cubeGeometry);
+    cubeMesh.position = vec3.fromValues(-1.0, 0, 0);
+    cubeMesh.scale = vec3.fromValues(0.5, 0.5, 0.5);
+    cubeMesh.color = vec4.fromValues(1, 0, 0, 1);
+    const mesh = createRenderTarget(gl, cubeMesh);
+    renderTargets.push(mesh);
+
+    const cubeMesh2 = createMesh(cubeGeometry);
+    cubeMesh2.position = vec3.fromValues(1.0, 0, 0);
+    cubeMesh2.scale = vec3.fromValues(0.5, 0.5, 0.5);
+    cubeMesh2.color = vec4.fromValues(0, 1, 0, 1);
+    const mesh2 = createRenderTarget(gl, cubeMesh2);
+    renderTargets.push(mesh2);
+
+    const cubeMesh3 = createMesh(cubeGeometry);
+    cubeMesh3.position = vec3.fromValues(0, 0, -10);
+    cubeMesh3.scale = vec3.fromValues(3, 3, 3);
+    cubeMesh3.color = vec4.fromValues(0, 0, 1, 1);
+    const mesh3 = createRenderTarget(gl, cubeMesh3);
+    renderTargets.push(mesh3);
+
+    return {
+        renderTargets,
+    }
+}
+
 const bindUniforms = (gl: WebGL2RenderingContext, program: ShaderProgram, renderTarget: RenderTarget, uniforms: Uniforms) => {
     const uniformLocations = program.uniformLocations;
     const modelMatrix = uniforms.modelMatrix;
@@ -205,30 +238,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const shaderProgram = createShaderProgram(gl);
         if (!shaderProgram) return;
 
-        const renderTargets: RenderTarget[] = [];
-
-        // build scene
-        const cubeGeometry = createCube();
-        const cubeMesh = createMesh(cubeGeometry);
-        cubeMesh.position = vec3.fromValues(-1.0, 0, 0);
-        cubeMesh.scale = vec3.fromValues(0.5, 0.5, 0.5);
-        cubeMesh.color = vec4.fromValues(1, 0, 0, 1);
-        const mesh = createRenderTarget(gl, cubeMesh);
-        renderTargets.push(mesh);
-
-        const cubeMesh2 = createMesh(cubeGeometry);
-        cubeMesh2.position = vec3.fromValues(1.0, 0, 0);
-        cubeMesh2.scale = vec3.fromValues(0.5, 0.5, 0.5);
-        cubeMesh2.color = vec4.fromValues(0, 1, 0, 1);
-        const mesh2 = createRenderTarget(gl, cubeMesh2);
-        renderTargets.push(mesh2);
-
-        const cubeMesh3 = createMesh(cubeGeometry);
-        cubeMesh3.position = vec3.fromValues(0, 0, -10);
-        cubeMesh3.scale = vec3.fromValues(3, 3, 3);
-        cubeMesh3.color = vec4.fromValues(0, 0, 1, 1);
-        const mesh3 = createRenderTarget(gl, cubeMesh3);
-        renderTargets.push(mesh3);
+        const scene = createScene(gl);
+        const renderTargets = scene.renderTargets;
 
         gl.enable(gl.CULL_FACE);
         gl.enable(gl.DEPTH_TEST);
