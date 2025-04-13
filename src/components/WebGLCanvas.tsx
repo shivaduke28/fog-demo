@@ -136,13 +136,7 @@ const updateUniforms = (renderTarget: RenderTarget,
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    // 仮実装
     const pane = new Pane();
-    const PARAMS = {
-        fogColor: '#000000',
-        uniformDensity: 0.01
-    };
-
     let uniforms: Uniforms = {
         modelMatrix: mat4.create(),
         viewMatrix: mat4.create(),
@@ -155,17 +149,42 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         mvpMatrix: mat4.create(),
         time: 0.0,
         color: vec4.fromValues(1, 1, 1, 1),
-        uniformDensity: 0.01,
+        uniformDensity: 0.0,
         cameraPosition: vec3.create(),
-        uniformColor: vec3.create(),
+        uniformColor: vec3.fromValues(0.5, 0.5, 0.5),
+        baseHeight: 1.0,
+        density: 0.1,
+        fallOff: 0.5,
     };
 
-    pane.addBinding(PARAMS, 'fogColor').on('change', (ev) => {
-        const color = ev.value;
-        const r = parseInt(color.slice(1, 3), 16) / 255;
-        const g = parseInt(color.slice(3, 5), 16) / 255;
-        const b = parseInt(color.slice(5, 7), 16) / 255;
-        vec3.set(uniforms.uniformColor, r, g, b);
+
+    const PARAMS = {
+        baseHeight: uniforms.baseHeight,
+        density: uniforms.density,
+        fallOff: uniforms.fallOff,
+        uniformDensity: uniforms.uniformDensity,
+        fogColor: '#888888',
+    };
+
+    pane.addBinding(PARAMS, 'baseHeight',
+        { min: -10, max: 10, step: 0.01 }
+    ).on('change', (ev) => {
+        const baseHeight = ev.value;
+        uniforms.baseHeight = baseHeight;
+    });
+
+    pane.addBinding(PARAMS, 'density',
+        { min: 0, max: 1, step: 0.01 }
+    ).on('change', (ev) => {
+        const density = ev.value;
+        uniforms.density = density;
+    });
+
+    pane.addBinding(PARAMS, 'fallOff',
+        { min: 0, max: 1, step: 0.001 }
+    ).on('change', (ev) => {
+        const fallOff = ev.value;
+        uniforms.fallOff = fallOff;
     });
 
     pane.addBinding(PARAMS, 'uniformDensity',
@@ -173,6 +192,14 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
     ).on('change', (ev) => {
         const density = ev.value;
         uniforms.uniformDensity = density;
+    });
+
+    pane.addBinding(PARAMS, 'fogColor').on('change', (ev) => {
+        const color = ev.value;
+        const r = parseInt(color.slice(1, 3), 16) / 255;
+        const g = parseInt(color.slice(3, 5), 16) / 255;
+        const b = parseInt(color.slice(5, 7), 16) / 255;
+        vec3.set(uniforms.uniformColor, r, g, b);
     });
 
     // to avoid render loop run twice (becase of strict mode)

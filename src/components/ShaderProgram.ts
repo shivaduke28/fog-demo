@@ -9,9 +9,12 @@ export type Uniforms = {
     mvpMatrix: mat4,
     time: number,
     color: vec4,
-    uniformDensity: number,
     cameraPosition: vec3,
+    uniformDensity: number,
     uniformColor: vec3,
+    baseHeight: number,
+    density: number,
+    fallOff: number,
 }
 
 export type ShaderProgram = {
@@ -29,6 +32,9 @@ export type ShaderProgram = {
         cameraPosition: WebGLUniformLocation | null,
         uniformDensity: WebGLUniformLocation | null,
         uniformColor: WebGLUniformLocation | null,
+        baseHight: WebGLUniformLocation | null,
+        density: WebGLUniformLocation | null,
+        fallOff: WebGLUniformLocation | null,        
     }
 }
 
@@ -83,6 +89,9 @@ export const createShaderProgram = (gl: WebGL2RenderingContext): ShaderProgram |
         uniformDensity: gl.getUniformLocation(program, 'u_uniformDensity'),
         cameraPosition: gl.getUniformLocation(program, 'u_cameraPosition'),
         uniformColor: gl.getUniformLocation(program, 'u_uniformColor'),
+        baseHight: gl.getUniformLocation(program, 'u_baseHeight'),
+        density: gl.getUniformLocation(program, 'u_density'),
+        fallOff: gl.getUniformLocation(program, 'u_fallOff'),
     };
 
     return {
@@ -104,4 +113,7 @@ export const bindUniforms = (gl: WebGL2RenderingContext,
     gl.uniform1f(uniformLocations.uniformDensity, uniforms.uniformDensity);
     gl.uniform3fv(uniformLocations.cameraPosition, uniforms.cameraPosition);
     gl.uniform3fv(uniformLocations.uniformColor, uniforms.uniformColor);
+    gl.uniform1f(uniformLocations.baseHight, uniforms.baseHeight);
+    gl.uniform1f(uniformLocations.density, uniforms.density);
+    gl.uniform1f(uniformLocations.fallOff, uniforms.fallOff);
 }
