@@ -1,92 +1,13 @@
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
-import vertexShaderSource from '../shaders/vertex.vs?raw'
-import fragmentShaderSource from '../shaders/fragment.fs?raw'
 import { createCube, flipNormal } from './Geometry';
 import { createMesh, Mesh } from './Mesh';
 import { Pane } from 'tweakpane';
+import { bindUniforms, createShaderProgram, ShaderProgram, Uniforms } from './ShaderProgram';
 
 type WebGLCanvasProps = {
     width?: number;
     height?: number;
-}
-
-type ShaderProgram = {
-    program: WebGLProgram,
-    attributeLocations: {
-        position: number,
-        normal: number,
-        uv: number,
-    },
-    uniformLocations: {
-        mvpMatrix: WebGLUniformLocation | null,
-        modelMatrix: WebGLUniformLocation | null,
-        time: WebGLUniformLocation | null,
-        color: WebGLUniformLocation | null,
-        cameraPosition: WebGLUniformLocation | null,
-        uniformDensity: WebGLUniformLocation | null,
-        uniformColor: WebGLUniformLocation | null,
-    }
-}
-
-const createProgram = (gl: WebGL2RenderingContext): WebGLProgram | null => {
-    const createShader = (type: number, source: string): WebGLShader | null => {
-        const shader = gl.createShader(type);
-        if (!shader) return null;
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            console.error(gl.getShaderInfoLog(shader));
-            gl.deleteShader(shader);
-            return null;
-        }
-
-        return shader;
-    };
-
-    const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource);
-    const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-    if (!vertexShader || !fragmentShader) return null;
-    const program = gl.createProgram();
-
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.error(gl.getProgramInfoLog(program));
-        return null;
-    }
-    return program;
-}
-
-const createShaderProgram = (gl: WebGL2RenderingContext): ShaderProgram | null => {
-    const program = createProgram(gl);
-    if (!program) return null;
-
-    const attributeLocations = {
-        position: gl.getAttribLocation(program, 'a_position'),
-        normal: gl.getAttribLocation(program, 'a_normal'),
-        uv: gl.getAttribLocation(program, 'a_uv'),
-    };
-
-    const uniformLocations = {
-        mvpMatrix: gl.getUniformLocation(program, 'u_mvpMatrix'),
-        modelMatrix: gl.getUniformLocation(program, 'u_modelMatrix'),
-        time: gl.getUniformLocation(program, 'u_time'),
-        color: gl.getUniformLocation(program, 'u_color'),
-        uniformDensity: gl.getUniformLocation(program, 'u_uniformDensity'),
-        cameraPosition: gl.getUniformLocation(program, 'u_cameraPosition'),
-        uniformColor: gl.getUniformLocation(program, 'u_uniformColor'),
-    };
-
-    return {
-        program,
-        attributeLocations,
-        uniformLocations,
-    };
 }
 
 const createVBO = (gl: WebGL2RenderingContext, data: Float32Array): WebGLBuffer => {
@@ -143,18 +64,6 @@ const bindAttributes = (gl: WebGL2RenderingContext, program: ShaderProgram, rend
     gl.enableVertexAttribArray(attributeLocations.uv);
 }
 
-type Uniforms = {
-    modelMatrix: mat4,
-    viewMatrix: mat4,
-    projectionMatrix: mat4,
-    mvpMatrix: mat4,
-    time: number,
-    color: vec4,
-    uniformDensity: number,
-    cameraPosition: vec3,
-    uniformColor: vec3,
-}
-
 type Camera = {
     position: vec3,
     lookAt: vec3,
@@ -208,11 +117,8 @@ const createScene = (gl: WebGL2RenderingContext): Scene => {
     }
 }
 
-const bindUniforms = (gl: WebGL2RenderingContext,
-    program: ShaderProgram,
-    renderTarget: RenderTarget,
+const updateUniforms = (renderTarget: RenderTarget,
     uniforms: Uniforms) => {
-    const uniformLocations = program.uniformLocations;
     const modelMatrix = uniforms.modelMatrix;
     const mvpMatrix = uniforms.mvpMatrix;
     const viewMatrix = uniforms.viewMatrix;
@@ -224,14 +130,7 @@ const bindUniforms = (gl: WebGL2RenderingContext,
         renderTarget.mesh.scale);
     mat4.multiply(mvpMatrix, viewMatrix, modelMatrix);
     mat4.multiply(mvpMatrix, projectionMatrix, mvpMatrix);
-
-    gl.uniformMatrix4fv(uniformLocations.mvpMatrix, false, mvpMatrix);
-    gl.uniformMatrix4fv(uniformLocations.modelMatrix, false, modelMatrix);
-    gl.uniform4fv(uniformLocations.color, renderTarget.mesh.color);
-    gl.uniform1f(uniformLocations.time, uniforms.time);
-    gl.uniform1f(uniformLocations.uniformDensity, uniforms.uniformDensity);
-    gl.uniform3fv(uniformLocations.cameraPosition, uniforms.cameraPosition);
-    gl.uniform3fv(uniformLocations.uniformColor, uniforms.uniformColor);
+    vec4.copy(uniforms.color, renderTarget.mesh.color);
 }
 
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
@@ -324,7 +223,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
 
             for (const target of renderTargets) {
                 bindAttributes(gl, shaderProgram, target);
-                bindUniforms(gl, shaderProgram, target, uniforms);
+                updateUniforms(target, uniforms);
+                bindUniforms(gl, shaderProgram, uniforms);
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, target.ibo);
                 gl.drawElements(gl.TRIANGLES, target.mesh.geomtry.triangles.length, gl.UNSIGNED_SHORT, 0);
             }
