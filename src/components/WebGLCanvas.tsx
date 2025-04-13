@@ -72,8 +72,12 @@ type Camera = {
 
 type Scene = {
     renderTargets: RenderTarget[],
-    camera: Camera,
+    camera:
+
+    Camera,
 }
+
+const cubeSeeds: number[] = [];
 
 const createScene = (gl: WebGL2RenderingContext): Scene => {
     const renderTargets: RenderTarget[] = [];
@@ -82,14 +86,15 @@ const createScene = (gl: WebGL2RenderingContext): Scene => {
     const count = 10;
     for (let i = 0; i < count; i++) {
         for (let j = 0; j < count; j++) {
-            const x = (i - 0.5 * (count-1.0)) * 4;
-            const z = (j - 0.5 * (count-1.0)) * 4;
+            const x = (i - 0.5 * (count - 1.0)) * 4;
+            const z = (j - 0.5 * (count - 1.0)) * 4;
             const cubeMesh = createMesh(cubeGeometry);
             cubeMesh.position = vec3.fromValues(x, 4, z);
             cubeMesh.scale = vec3.fromValues(0.5, 8, 0.5);
             vec4.set(cubeMesh.color, 1, 1, 1, 1);
             const mesh = createRenderTarget(gl, cubeMesh);
             renderTargets.push(mesh);
+            cubeSeeds.push(Math.random());
         }
     }
 
@@ -104,7 +109,7 @@ const createScene = (gl: WebGL2RenderingContext): Scene => {
     return {
         renderTargets,
         camera: {
-            position: vec3.fromValues(45, 30, 30),
+            position: vec3.fromValues(42, 40, 30),
             lookAt: vec3.fromValues(0, 8, 0),
             up: vec3.fromValues(0, 1, 0),
         }
@@ -125,6 +130,18 @@ const updateUniforms = (renderTarget: RenderTarget,
     mat4.multiply(mvpMatrix, viewMatrix, modelMatrix);
     mat4.multiply(mvpMatrix, projectionMatrix, mvpMatrix);
     vec4.copy(uniforms.color, renderTarget.mesh.color);
+}
+
+const animateCubes = (renderTargets: RenderTarget[], time: number) => {
+    for (let i = 0; i < renderTargets.length - 1; i++) {
+        const target = renderTargets[i];
+        const mesh = target.mesh;
+        const position = mesh.position;
+        const scale = mesh.scale;
+
+        scale[1] = Math.sin(time * 3 + cubeSeeds[i] * 10) * 1.0 + 9.0;
+        position[1] = scale[1] * 0.5;
+    }
 }
 
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 }) => {
@@ -151,7 +168,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         uniformDensity: 0.0,
         cameraPosition: vec3.create(),
         uniformColor: vec3.fromValues(0.5, 0.5, 0.5),
-        baseHeight: 1.0,
+        baseHeight: 8.0,
         density: 0.1,
         fallOff: 0.5,
     };
@@ -166,7 +183,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
     };
 
     pane.addBinding(PARAMS, 'baseHeight',
-        { min: -10, max: 20, step: 0.01 }
+        { min: 0, max: 20, step: 0.01 }
     ).on('change', (ev) => {
         const baseHeight = ev.value;
         uniforms.baseHeight = baseHeight;
@@ -246,6 +263,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
                 scene.camera.lookAt,
                 scene.camera.up
             );
+
+            animateCubes(renderTargets, uniforms.time);
 
             for (const target of renderTargets) {
                 bindAttributes(gl, shaderProgram, target);
