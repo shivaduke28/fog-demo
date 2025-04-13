@@ -187,9 +187,6 @@ export function createCube(): Geometry {
             1.0, 1.0,
         ]);
 
-
-
-
     const triangles = new Uint16Array(
         [
             // front
@@ -218,5 +215,26 @@ export function createCube(): Geometry {
         normals: normals,
         uvs: uvs,
         triangles: triangles
+    };
+}
+
+export function flipNormal(geometry: Geometry): Geometry {
+    const flippedNormals = new Float32Array(geometry.normals.length);
+    for (let i = 0; i < geometry.normals.length; i++) {
+        flippedNormals[i] = -geometry.normals[i];
+    }
+
+    // Flip the winding order of the triangles
+    const flippedTriangles = new Uint16Array(geometry.triangles.length);
+    for (let i = 0; i < geometry.triangles.length; i += 3) {
+        flippedTriangles[i] = geometry.triangles[i + 2];
+        flippedTriangles[i + 1] = geometry.triangles[i + 1];
+        flippedTriangles[i + 2] = geometry.triangles[i];
+    }
+
+    return {
+        ...geometry,
+        normals: flippedNormals,
+        triangles: flippedTriangles,
     };
 }

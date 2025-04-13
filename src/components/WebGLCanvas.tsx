@@ -2,7 +2,7 @@ import { mat4, quat, vec3, vec4 } from 'gl-matrix';
 import React, { useRef, useEffect } from 'react'
 import vertexShaderSource from '../shaders/vertex.vs?raw'
 import fragmentShaderSource from '../shaders/fragment.fs?raw'
-import { createCube } from './Geometry';
+import { createCube, createQuad, flipNormal } from './Geometry';
 import { createMesh, Mesh } from './Mesh';
 import { Pane } from 'tweakpane';
 
@@ -146,12 +146,19 @@ type Uniforms = {
     color: vec4,
 }
 
+type Camera = {
+    position: vec3,
+    lookAt: vec3,
+}
+
 type Scene = {
     renderTargets: RenderTarget[],
+    camera: Camera,
 }
 
 const createScene = (gl: WebGL2RenderingContext): Scene => {
     const renderTargets: RenderTarget[] = [];
+
     const cubeGeometry = createCube();
     const cubeMesh = createMesh(cubeGeometry);
     cubeMesh.position = vec3.fromValues(-1.0, 0, 0);
@@ -168,14 +175,25 @@ const createScene = (gl: WebGL2RenderingContext): Scene => {
     renderTargets.push(mesh2);
 
     const cubeMesh3 = createMesh(cubeGeometry);
-    cubeMesh3.position = vec3.fromValues(0, 0, -10);
+    cubeMesh3.position = vec3.fromValues(0, 0, -5);
     cubeMesh3.scale = vec3.fromValues(3, 3, 3);
     cubeMesh3.color = vec4.fromValues(0, 0, 1, 1);
     const mesh3 = createRenderTarget(gl, cubeMesh3);
     renderTargets.push(mesh3);
 
+    const cubeFlipped = flipNormal(cubeGeometry);
+    const quadMesh = createMesh(cubeFlipped);
+    vec3.set(quadMesh.position, 0, 5, 0);
+    vec3.set(quadMesh.scale, 10, 10, 10);
+    const quadMeshRenderTarget = createRenderTarget(gl, quadMesh);
+    renderTargets.push(quadMeshRenderTarget);
+
     return {
         renderTargets,
+        camera: {
+            position: vec3.fromValues(20, 20, 20),
+            lookAt: vec3.fromValues(0, 0, 0),
+        }
     }
 }
 
@@ -249,8 +267,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         let uniforms: Uniforms = {
             modelMatrix: mat4.create(),
             viewMatrix: mat4.lookAt(mat4.create(),
-                [0, 0, 5],
-                [0, 0, 0],
+                scene.camera.position,
+                scene.camera.lookAt,
                 [0, 1, 0]
             ),
             projectionMatrix: mat4.perspective(mat4.create(),
@@ -280,8 +298,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             for (const target of renderTargets) {
 
                 // animation
-                vec3.add(target.mesh.position, target.mesh.position, vec3.fromValues(0, Math.sin(uniforms.time) * 0.01, 0.0));
-                quat.rotateY(target.mesh.rotation, target.mesh.rotation, 0.01);
+                // vec3.add(target.mesh.position, target.mesh.position, vec3.fromValues(0, Math.sin(uniforms.time) * 0.01, 0.0));
+                // quat.rotateY(target.mesh.rotation, target.mesh.rotation, 0.01);
 
                 bindAttributes(gl, shaderProgram, target);
                 bindUniforms(gl, shaderProgram, target, uniforms);
