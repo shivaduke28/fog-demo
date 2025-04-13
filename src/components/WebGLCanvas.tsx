@@ -160,7 +160,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         projectionMatrix: mat4.ortho(mat4.create(),
             -15, 15,
             -15, 15,
-            -100, 200
+            -100, 100
         ),
         mvpMatrix: mat4.create(),
         time: 0.0,
