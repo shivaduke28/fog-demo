@@ -11,6 +11,21 @@ type WebGLCanvasProps = {
     height?: number;
 }
 
+type ShaderProgram = {
+    program: WebGLProgram,
+    attributeLocations: {
+        position: number,
+        normal: number,
+        uv: number,
+    },
+    uniformLocations: {
+        mvpMatrix: WebGLUniformLocation | null,
+        modelMatrix: WebGLUniformLocation | null,
+        time: WebGLUniformLocation | null,
+        color: WebGLUniformLocation | null,
+    }
+}
+
 const createProgram = (gl: WebGL2RenderingContext): WebGLProgram | null => {
     const createShader = (type: number, source: string): WebGLShader | null => {
         const shader = gl.createShader(type);
@@ -42,6 +57,30 @@ const createProgram = (gl: WebGL2RenderingContext): WebGLProgram | null => {
         return null;
     }
     return program;
+}
+
+const createShaderProgram = (gl: WebGL2RenderingContext): ShaderProgram | null => {
+    const program = createProgram(gl);
+    if (!program) return null;
+
+    const attributeLocations = {
+        position: gl.getAttribLocation(program, 'position'),
+        normal: gl.getAttribLocation(program, 'normal'),
+        uv: gl.getAttribLocation(program, 'uv'),
+    };
+
+    const uniformLocations = {
+        mvpMatrix: gl.getUniformLocation(program, 'mvpMatrix'),
+        modelMatrix: gl.getUniformLocation(program, 'modelMatrix'),
+        time: gl.getUniformLocation(program, 'time'),
+        color: gl.getUniformLocation(program, 'color'),
+    };
+
+    return {
+        program,
+        attributeLocations,
+        uniformLocations,
+    };
 }
 
 const createVBO = (gl: WebGL2RenderingContext, data: Float32Array): WebGLBuffer => {
@@ -85,6 +124,51 @@ const createRenderTarget = (gl: WebGL2RenderingContext, mesh: Mesh): RenderTarge
     }
 }
 
+const bindAttributes = (gl: WebGL2RenderingContext, program: ShaderProgram, renderTarget: RenderTarget) => {
+    const attributeLocations = program.attributeLocations;
+    gl.bindBuffer(gl.ARRAY_BUFFER, renderTarget.positionVBO);
+    gl.vertexAttribPointer(attributeLocations.position, 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    gl.enableVertexAttribArray(attributeLocations.position);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, renderTarget.normalVBO);
+    gl.vertexAttribPointer(attributeLocations.normal, 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    gl.enableVertexAttribArray(attributeLocations.normal);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, renderTarget.uvVBO);
+    gl.vertexAttribPointer(attributeLocations.uv, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
+    gl.enableVertexAttribArray(attributeLocations.uv);
+}
+
+type Uniforms = {
+    modelMatrix: mat4,
+    viewMatrix: mat4,
+    projectionMatrix: mat4,
+    mvpMatrix: mat4,
+    time: number,
+    color: vec4,
+}
+
+const bindUniforms = (gl: WebGL2RenderingContext, program: ShaderProgram, renderTarget: RenderTarget, uniforms: Uniforms) => {
+    const uniformLocations = program.uniformLocations;
+    const modelMatrix = uniforms.modelMatrix;
+    const mvpMatrix = uniforms.mvpMatrix;
+    const viewMatrix = uniforms.viewMatrix;
+    const projectionMatrix = uniforms.projectionMatrix;
+
+    mat4.fromRotationTranslationScale(modelMatrix,
+        renderTarget.mesh.rotation,
+        renderTarget.mesh.position,
+        renderTarget.mesh.scale);
+    mat4.multiply(mvpMatrix, viewMatrix, modelMatrix);
+    mat4.multiply(mvpMatrix, projectionMatrix, mvpMatrix);
+
+    gl.uniformMatrix4fv(uniformLocations.mvpMatrix, false, mvpMatrix);
+    gl.uniformMatrix4fv(uniformLocations.modelMatrix, false, modelMatrix);
+    gl.uniform4fv(uniformLocations.color, renderTarget.mesh.color);
+    gl.uniform1f(uniformLocations.time, uniforms.time);
+}
+
+
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -103,15 +187,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         const r = parseInt(color.slice(1, 3), 16) / 255;
         const g = parseInt(color.slice(3, 5), 16) / 255;
         const b = parseInt(color.slice(5, 7), 16) / 255;
-        if (cube1) {
-            cube1.mesh.color[0] = r;
-            cube1.mesh.color[1] = g;
-            cube1.mesh.color[2] = b;
-        }
+        console.log(r, g, b);
     });
-
-    // paneから触る用（仮）
-    let cube1: RenderTarget;
 
     // to avoid render loop run twice (becase of strict mode)
     var initialized = false;
@@ -128,17 +205,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
             return;
         }
 
-        const program = createProgram(gl);
-        if (!program) return;
-
-        const positionLocation = gl.getAttribLocation(program, 'position');
-        const normalLocation = gl.getAttribLocation(program, 'normal');
-        const uvLocation = gl.getAttribLocation(program, 'uv');
-
-        const mvpLocation = gl.getUniformLocation(program, 'mvpMatrix');
-        const modelLocation = gl.getUniformLocation(program, 'modelMatrix');
-        const timeLocation = gl.getUniformLocation(program, 'time');
-        const colorLocation = gl.getUniformLocation(program, 'color');
+        const shaderProgram = createShaderProgram(gl);
+        if (!shaderProgram) return;
 
         const renderTargets: RenderTarget[] = [];
 
@@ -150,7 +218,6 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         cubeMesh.color = vec4.fromValues(1, 0, 0, 1);
         const mesh = createRenderTarget(gl, cubeMesh);
         renderTargets.push(mesh);
-        cube1 = mesh;
 
         const cubeMesh2 = createMesh(cubeGeometry);
         cubeMesh2.position = vec3.fromValues(1.0, 0, 0);
@@ -170,66 +237,51 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 800, height = 600 }) 
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
 
-        const viewMatrix = mat4.create();
-        const projectionMatrix = mat4.create();
-        const mvpMatrix = mat4.create();
 
-        mat4.lookAt(viewMatrix,
-            [0, 0, 5],
-            [0, 0, 0],
-            [0, 1, 0]
-        );
+        let uniforms: Uniforms = {
+            modelMatrix: mat4.create(),
+            viewMatrix: mat4.lookAt(mat4.create(),
+                [0, 0, 5],
+                [0, 0, 0],
+                [0, 1, 0]
+            ),
+            projectionMatrix: mat4.perspective(mat4.create(),
+                Math.PI / 3,
+                width / height,
+                .01,
+                100
+            ),
+            mvpMatrix: mat4.create(),
+            time: 0.0,
+            color: vec4.fromValues(1, 1, 1, 1),
+        };
 
-        mat4.perspective(projectionMatrix,
-            Math.PI / 3,
-            width / height,
-            .01,
-            100
-        );
-
-        let count = 0;
-        let time = 0.0;
-
+        let loopCount = 0;
+        const FPS = 60;
+        const FPSInv = 1.0 / FPS;
 
         (function renderLoop() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clearDepth(1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            count += 1;
-            time = 1.0 / 60.0 * count;
+            loopCount += 1;
+            uniforms.time = FPSInv * loopCount;
 
-            gl.useProgram(program);
+            gl.useProgram(shaderProgram.program);
 
             for (const target of renderTargets) {
-                gl.bindBuffer(gl.ARRAY_BUFFER, target.positionVBO);
-                gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-                gl.enableVertexAttribArray(positionLocation);
-                gl.bindBuffer(gl.ARRAY_BUFFER, target.normalVBO);
-                gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-                gl.enableVertexAttribArray(normalLocation);
-                gl.bindBuffer(gl.ARRAY_BUFFER, target.uvVBO);
-                gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
-                gl.enableVertexAttribArray(uvLocation);
 
-                vec3.add(target.mesh.position, target.mesh.position, vec3.fromValues(0, Math.sin(time) * 0.01, 0.0));
-                // rotate object
+                // animation
+                vec3.add(target.mesh.position, target.mesh.position, vec3.fromValues(0, Math.sin(uniforms.time) * 0.01, 0.0));
                 quat.rotateY(target.mesh.rotation, target.mesh.rotation, 0.01);
 
-                const modelMatrix = target.mesh.modelMatrix();
-                mat4.multiply(mvpMatrix, viewMatrix, modelMatrix);
-                mat4.multiply(mvpMatrix, projectionMatrix, mvpMatrix);
-
-                gl.uniformMatrix4fv(mvpLocation, false, mvpMatrix);
-                gl.uniformMatrix4fv(modelLocation, false, modelMatrix);
-                gl.uniform4fv(colorLocation, target.mesh.color);
-
-                gl.uniform1f(timeLocation, time);
-
+                bindAttributes(gl, shaderProgram, target);
+                bindUniforms(gl, shaderProgram, target, uniforms);
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, target.ibo);
                 gl.drawElements(gl.TRIANGLES, target.mesh.geomtry.triangles.length, gl.UNSIGNED_SHORT, 0);
             }
 
-            setTimeout(renderLoop, 1000 / 60);
+            setTimeout(renderLoop, 1000 * FPSInv);
         })();
     }, []);
 

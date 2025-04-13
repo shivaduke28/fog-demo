@@ -1,4 +1,4 @@
-import { mat4, quat, vec3, vec4 } from "gl-matrix";
+import { quat, vec3, vec4 } from "gl-matrix";
 import { Geometry } from "./Geometry";
 
 export interface Mesh {
@@ -7,7 +7,6 @@ export interface Mesh {
     rotation: quat
     scale: vec3;
     color: vec4;
-    modelMatrix(): mat4;
 }
 
 class MeshImpl implements Mesh {
@@ -16,12 +15,6 @@ class MeshImpl implements Mesh {
     rotation: quat;
     scale: vec3;
     color: vec4;
-    private mat: mat4;
-
-    modelMatrix() { 
-        mat4.fromRotationTranslationScale(this.mat, this.rotation, this.position, this.scale);
-        return this.mat;
-     };
 
     constructor(geometry: Geometry) {
         this.geomtry = geometry;
@@ -29,7 +22,6 @@ class MeshImpl implements Mesh {
         this.rotation = quat.create();
         this.scale = vec3.fromValues(1, 1, 1);
         this.color = vec4.fromValues(1, 1, 1, 1);
-        this.mat = mat4.create();
     }
 }
 
