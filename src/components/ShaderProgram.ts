@@ -15,6 +15,7 @@ export type Uniforms = {
     baseHeight: vec3,
     density: vec3,
     fallOff: vec3,
+    lightColor: vec3,
 }
 
 export type ShaderProgram = {
@@ -34,7 +35,8 @@ export type ShaderProgram = {
         uniformColor: WebGLUniformLocation | null,
         baseHight: WebGLUniformLocation | null,
         density: WebGLUniformLocation | null,
-        fallOff: WebGLUniformLocation | null,        
+        fallOff: WebGLUniformLocation | null,
+        lightColor: WebGLUniformLocation | null,        
     }
 }
 
@@ -92,6 +94,7 @@ export const createShaderProgram = (gl: WebGL2RenderingContext): ShaderProgram |
         baseHight: gl.getUniformLocation(program, 'u_baseHeight'),
         density: gl.getUniformLocation(program, 'u_density'),
         fallOff: gl.getUniformLocation(program, 'u_fallOff'),
+        lightColor: gl.getUniformLocation(program, 'u_lightColor'),
     };
 
     return {
@@ -116,4 +119,5 @@ export const bindUniforms = (gl: WebGL2RenderingContext,
     gl.uniform3fv(uniformLocations.baseHight, uniforms.baseHeight);
     gl.uniform3fv(uniformLocations.density, uniforms.density);
     gl.uniform3fv(uniformLocations.fallOff, uniforms.fallOff);
+    gl.uniform3fv(uniformLocations.lightColor, uniforms.lightColor);
 }

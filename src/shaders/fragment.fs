@@ -18,6 +18,7 @@ uniform vec3 u_density;
 uniform vec3 u_fallOff;
 uniform vec3 u_uniformDensity;
 uniform vec3 u_uniformColor;
+uniform vec3 u_lightColor;
 
 vec3 heightFogTransmittance(
   vec3 cameraPosition,
@@ -38,9 +39,9 @@ void main() {
   vec2 uv = v_out.uv;
   vec3 l = normalize(vec3(0.2, 1.0, .5));
   vec3 n = normalize(v_out.normal);
-  vec3 col = vec3(1.0f) * u_color.rgb;
-  col *= max(0.0f, dot(n, l));
-  col += vec3(0.1f) * u_color.rgb;
+  vec3 col = vec3(1.0) * u_color.rgb;
+  col *= max(0.0, dot(n, l)) * u_lightColor.rgb;
+  col += vec3(0.1) * u_color.rgb;
 
   vec3 view = normalize(u_cameraPosition - v_out.positionWS);
   float distance = length(v_out.positionWS - u_cameraPosition);
@@ -57,5 +58,5 @@ void main() {
   );
 
   col = mix(u_uniformColor, col, trans);
-  fragColor = vec4(col, 1.0f);
+  fragColor = vec4(col, 1.0);
 }

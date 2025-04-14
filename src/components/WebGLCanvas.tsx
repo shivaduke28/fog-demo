@@ -181,15 +181,25 @@ const createPane = (params: Parameters): Pane => {
     bindRGB(pane, uniforms.uniformDensity, 'Uniform Density', 0, 0.1, 0.001);
 
     const PARAMS = {
-        color: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
+        fogColor: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
+        lightColor: { r: uniforms.lightColor[0], g: uniforms.lightColor[1], b: uniforms.lightColor[2] },
         cubeScale: params.cubeScale,
     };
 
-    pane.addBinding(PARAMS, 'color', {
+    pane.addBinding(PARAMS, 'fogColor', {
         color: { type: 'float' },
+        label: 'fog color',
     }).on('change', (ev) => {
         const color = ev.value;
         vec3.set(uniforms.uniformColor, color.r, color.g, color.b);
+    });
+
+    pane.addBinding(PARAMS, 'lightColor', {
+        color: { type: 'float' },
+        label: 'light color',
+    }).on('change', (ev) => {
+        const color = ev.value;
+        vec3.set(uniforms.lightColor, color.r, color.g, color.b);
     });
 
     const cameraFolder = pane.addFolder({
@@ -296,6 +306,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
             baseHeight: vec3.fromValues(3, 5, 8),
             density: vec3.fromValues(0.5, 0.5, 0.5),
             fallOff: vec3.fromValues(0.5, 0.5, 0.5),
+            lightColor: vec3.fromValues(1, 1, 1),
         };
 
         const params: Parameters = {
