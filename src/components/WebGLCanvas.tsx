@@ -383,7 +383,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
 
     return (
         <canvas ref={canvasRef} width={width} height={height} style={{
-            width: "100%",
+            maxWidth: "100%",
             height: "auto",
         }} />
     );
