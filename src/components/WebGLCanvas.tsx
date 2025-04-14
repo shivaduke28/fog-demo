@@ -77,6 +77,14 @@ type Scene = {
     Camera,
 }
 
+type Parameters = {
+    uniforms: Uniforms,
+    camera: {
+        position: vec3,
+    },
+    cubeScale: number,
+}
+
 const cubeSeeds: number[] = [];
 
 const createScene = (gl: WebGL2RenderingContext): Scene => {
@@ -132,19 +140,23 @@ const updateUniforms = (renderTarget: RenderTarget,
     vec4.copy(uniforms.color, renderTarget.mesh.color);
 }
 
-const animateCubes = (renderTargets: RenderTarget[], time: number) => {
+const animateCubes = (renderTargets: RenderTarget[], params: Parameters) => {
+    const time = params.uniforms.time;
+    const cubeScale = params.cubeScale;
     for (let i = 0; i < renderTargets.length - 1; i++) {
         const target = renderTargets[i];
         const mesh = target.mesh;
         const position = mesh.position;
         const scale = mesh.scale;
 
+        scale[0] = cubeScale;
         scale[1] = Math.sin(time * 3 + cubeSeeds[i] * 10) * 1.0 + 9.0;
+        scale[2] = cubeScale;
         position[1] = scale[1] * 0.5;
     }
 }
 
-const createPane = (uniforms: Uniforms): Pane => {
+const createPane = (params: Parameters): Pane => {
     const bindRGB = (pane: Pane, vec: vec3, name: string, min: number, max: number, step: number) => {
         const params = {
             R: vec[0],
@@ -166,6 +178,7 @@ const createPane = (uniforms: Uniforms): Pane => {
         });
     };
 
+    const uniforms = params.uniforms;
     const pane = new Pane({
         title: 'Parameters',
         expanded: true,
@@ -178,6 +191,7 @@ const createPane = (uniforms: Uniforms): Pane => {
 
     const PARAMS = {
         fogColor: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
+        cubeScale: params.cubeScale,
         cameraPosition: { x: uniforms.cameraPosition[0], y: uniforms.cameraPosition[1], z: uniforms.cameraPosition[2] },
     };
 
@@ -197,6 +211,15 @@ const createPane = (uniforms: Uniforms): Pane => {
     }).on('change', (ev) => {
         const position = ev.value;
         vec3.set(uniforms.cameraPosition, position.x, position.y, position.z);
+    });
+
+    pane.addBinding(PARAMS, 'cubeScale', {
+        min: 0.1,
+        max: 2,
+        step: 0.001,
+        label: 'Cube Scale',
+    }).on('change', (ev) => {
+        params.cubeScale = ev.value;
     });
 
     const initialState = structuredClone(pane.exportState());
@@ -240,7 +263,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
             fallOff: vec3.fromValues(0.5, 0.5, 0.5),
         };
 
-        const pane = createPane(uniforms);
+        const params: Parameters = {
+            uniforms: uniforms,
+            camera: {
+                position: uniforms.cameraPosition,
+            },
+            cubeScale: 0.5,
+        };
+
+        const pane = createPane(params);
 
         const gl = canvas.getContext('webgl2');
 
@@ -281,7 +312,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
                 scene.camera.up
             );
 
-            animateCubes(renderTargets, uniforms.time);
+            animateCubes(renderTargets, params);
 
             for (const target of renderTargets) {
                 bindAttributes(gl, shaderProgram, target);
