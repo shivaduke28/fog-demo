@@ -262,16 +262,6 @@ const createPane = (params: Parameters): Pane => {
         pane.importState(initialState);
     });
 
-    pane.addButton({ title: 'Tweet Image' }).on('click', () => {
-        const canvas = document.querySelector('canvas');
-        if (!canvas) return;
-        const dataURL = canvas.toDataURL("image/png");
-        const tweetText = encodeURIComponent("https://shivaduke28.github.io/fog-demo/");
-        const intentUrl = `https://x.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(dataURL)}`;
-            
-        window.open(intentUrl, "_blank");
-    });
-
     return pane;
 }
 
@@ -393,11 +383,31 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         };
     }, []);
 
+    const saveAsPNG = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const dataURL = canvas.toDataURL('image/png');
+
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = 'fog_demo.png';
+        link.click();
+        link.remove();
+    };
+
     return (
-        <canvas ref={canvasRef} width={width} height={height} style={{
-            maxWidth: "100%",
-            height: "auto",
-        }} />
+        <div>
+            <canvas ref={canvasRef} width={width} height={height} style={{
+                maxWidth: "100%",
+                height: "auto",
+            }} />
+            <div style={{
+                display: "flex",
+                justifyContent: "flex-end",
+            }}>
+                <button onClick={saveAsPNG}>Save as PNG</button>
+            </div>
+        </div>
     );
 }
 
