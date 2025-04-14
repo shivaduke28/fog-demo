@@ -267,6 +267,7 @@ const createPane = (params: Parameters): Pane => {
 
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const glRef = useRef<WebGL2RenderingContext>(null);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -319,6 +320,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
             console.error('WebGLがサポートされていません');
             return;
         }
+        glRef.current = gl;
 
         const shaderProgram = createShaderProgram(gl);
         if (!shaderProgram) return;
@@ -381,6 +383,16 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
             }
         };
     }, []);
+
+    useEffect(() => {
+        const gl = glRef.current;
+        if (!gl) return;
+
+        if (gl) {
+            gl.viewport(0, 0, width, height);
+        }
+
+    }, [width, height]);
 
     const saveAsPNG = () => {
         const canvas = canvasRef.current;
