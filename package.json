@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "gl-matrix": "^3.4.3",
-    "katex": "^0.16.22",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tweakpane": "^4.0.5"
