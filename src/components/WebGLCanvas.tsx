@@ -145,7 +145,7 @@ const animateCubes = (renderTargets: RenderTarget[], time: number) => {
 }
 
 const createPane = (uniforms: Uniforms): Pane => {
-    const bindRGB = (pane: Pane, vec: vec3, name: string, min: number, max: number) => {
+    const bindRGB = (pane: Pane, vec: vec3, name: string, min: number, max: number, step: number) => {
         const params = {
             R: vec[0],
             G: vec[1],
@@ -155,13 +155,13 @@ const createPane = (uniforms: Uniforms): Pane => {
             title: name,
             expanded: true,
         });
-        folder.addBinding(params, 'R', { min, max }).on('change', (ev) => {
+        folder.addBinding(params, 'R', { min, max, step }).on('change', (ev) => {
             vec[0] = ev.value;
         });
-        folder.addBinding(params, 'G', { min, max }).on('change', (ev) => {
+        folder.addBinding(params, 'G', { min, max, step }).on('change', (ev) => {
             vec[1] = ev.value;
         });
-        folder.addBinding(params, 'B', { min, max }).on('change', (ev) => {
+        folder.addBinding(params, 'B', { min, max, step }).on('change', (ev) => {
             vec[2] = ev.value;
         });
     };
@@ -171,24 +171,38 @@ const createPane = (uniforms: Uniforms): Pane => {
         expanded: true,
     });
 
-    bindRGB(pane, uniforms.baseHeight, 'Base Height', 0, 20);
-    bindRGB(pane, uniforms.density, 'Density', 0, 1);
-    bindRGB(pane, uniforms.fallOff, 'Fall Off', 0.001, 2);
-    bindRGB(pane, uniforms.uniformDensity, 'Uniform Density', 0, 0.1);
+    bindRGB(pane, uniforms.baseHeight, 'Base Height', 0, 20, 0.01);
+    bindRGB(pane, uniforms.density, 'Density', 0, 1, 0.001);
+    bindRGB(pane, uniforms.fallOff, 'Fall Off', 0.001, 2, 0.001);
+    bindRGB(pane, uniforms.uniformDensity, 'Uniform Density', 0, 0.1, 0.001);
 
     const PARAMS = {
         fogColor: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
         cameraPosition: { x: uniforms.cameraPosition[0], y: uniforms.cameraPosition[1], z: uniforms.cameraPosition[2] },
     };
 
-    pane.addBinding(PARAMS, 'fogColor', { color: { type: 'float' } }).on('change', (ev) => {
+    pane.addBinding(PARAMS, 'fogColor', {
+        color: { type: 'float' },
+        label: 'Fog Color',
+    }).on('change', (ev) => {
         const color = ev.value;
         vec3.set(uniforms.uniformColor, color.r, color.g, color.b);
     });
 
-    pane.addBinding(PARAMS, 'cameraPosition').on('change', (ev) => {
+    pane.addBinding(PARAMS, 'cameraPosition', {
+        x: { min: -100, max: 100, step: 1 },
+        y: { min: 10, max: 100, step: 1 },
+        z: { min: -100, max: 100, step: 1 },
+        label: 'Camera',
+    }).on('change', (ev) => {
         const position = ev.value;
         vec3.set(uniforms.cameraPosition, position.x, position.y, position.z);
+    });
+
+    const initialState = structuredClone(pane.exportState());
+
+    pane.addButton({ title: 'Reset' }).on('click', () => {
+        pane.importState(initialState);
     });
 
     return pane;
@@ -196,8 +210,6 @@ const createPane = (uniforms: Uniforms): Pane => {
 
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-
-
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -222,8 +234,8 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
             color: vec4.fromValues(1, 1, 1, 1),
             uniformDensity: vec3.fromValues(0.0, 0.0, 0.0),
             cameraPosition: vec3.fromValues(40, 40, 30),
-            uniformColor: vec3.fromValues(0.2, 0.1, 0.0),
-            baseHeight: vec3.fromValues(8, 8, 8),
+            uniformColor: vec3.fromValues(1, 0.8, 0.5),
+            baseHeight: vec3.fromValues(3, 5, 8),
             density: vec3.fromValues(0.5, 0.5, 0.5),
             fallOff: vec3.fromValues(0.5, 0.5, 0.5),
         };
