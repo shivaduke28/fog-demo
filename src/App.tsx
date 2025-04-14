@@ -30,7 +30,7 @@ function App() {
 
   return (
     <>
-      <h1>Fog Demo</h1>
+      <h1>Height Fog Sandbox</h1>
       <div style={{ display: "flex", gap: "1rem" }}>
         {updateResolution("width", width, updateWidth)}
         {updateResolution("height", height, updateHeight)}
