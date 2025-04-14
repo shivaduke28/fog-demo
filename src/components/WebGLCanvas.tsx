@@ -330,17 +330,16 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
 
-        let loopCount = 0;
         const FPS = 60;
         const FPSInv = 1.0 / FPS;
 
+        const startTime = performance.now();
         let timerId = 0;
         (function renderLoop() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clearDepth(1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            loopCount += 1;
-            uniforms.time = FPSInv * loopCount;
+            uniforms.time = (performance.now() - startTime) / 1000.0;
 
             gl.useProgram(shaderProgram.program);
 
