@@ -262,6 +262,16 @@ const createPane = (params: Parameters): Pane => {
         pane.importState(initialState);
     });
 
+    pane.addButton({ title: 'Tweet Image' }).on('click', () => {
+        const canvas = document.querySelector('canvas');
+        if (!canvas) return;
+        const dataURL = canvas.toDataURL("image/png");
+        const tweetText = encodeURIComponent("https://shivaduke28.github.io/fog-demo/");
+        const intentUrl = `https://x.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(dataURL)}`;
+            
+        window.open(intentUrl, "_blank");
+    });
+
     return pane;
 }
 
@@ -311,7 +321,9 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
 
         const pane = createPane(params);
 
-        const gl = canvas.getContext('webgl2');
+        const gl = canvas.getContext('webgl2', {
+            preserveDrawingBuffer: true,
+        });
 
         if (!gl) {
             console.error('WebGLがサポートされていません');
