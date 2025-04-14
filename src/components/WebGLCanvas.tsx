@@ -144,7 +144,7 @@ const animateCubes = (renderTargets: RenderTarget[], time: number) => {
     }
 }
 
-const createPane = (uniforms: Uniforms) => {
+const createPane = (uniforms: Uniforms): Pane => {
     const bindRGB = (pane: Pane, vec: vec3, name: string, min: number, max: number) => {
         const params = {
             R: vec[0],
@@ -190,45 +190,45 @@ const createPane = (uniforms: Uniforms) => {
         const position = ev.value;
         vec3.set(uniforms.cameraPosition, position.x, position.y, position.z);
     });
+
+    return pane;
 }
 
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    let uniforms: Uniforms = {
-        modelMatrix: mat4.create(),
-        viewMatrix: mat4.create(),
-        // projectionMatrix: mat4.perspective(mat4.create(),
-        //     Math.PI / 3,
-        //     width / height,
-        //     .01,
-        //     100
-        // ),
-        projectionMatrix: mat4.ortho(mat4.create(),
-            -15, 15,
-            -15, 15,
-            -100, 1000
-        ),
-        mvpMatrix: mat4.create(),
-        time: 0.0,
-        color: vec4.fromValues(1, 1, 1, 1),
-        uniformDensity: vec3.fromValues(0.0, 0.0, 0.0),
-        cameraPosition: vec3.fromValues(40, 40, 30),
-        uniformColor: vec3.fromValues(0.2, 0.1, 0.0),
-        baseHeight: vec3.fromValues(8, 8, 8),
-        density: vec3.fromValues(0.5, 0.5, 0.5),
-        fallOff: vec3.fromValues(0.5, 0.5, 0.5),
-    };
 
-    createPane(uniforms);
 
-    // to avoid render loop run twice (becase of strict mode)
-    var initialized = false;
     useEffect(() => {
-        if (initialized) return;
-        initialized = true;
         const canvas = canvasRef.current;
         if (!canvas) return;
+
+        let uniforms: Uniforms = {
+            modelMatrix: mat4.create(),
+            viewMatrix: mat4.create(),
+            // projectionMatrix: mat4.perspective(mat4.create(),
+            //     Math.PI / 3,
+            //     width / height,
+            //     .01,
+            //     100
+            // ),
+            projectionMatrix: mat4.ortho(mat4.create(),
+                -15, 15,
+                -15, 15,
+                -100, 1000
+            ),
+            mvpMatrix: mat4.create(),
+            time: 0.0,
+            color: vec4.fromValues(1, 1, 1, 1),
+            uniformDensity: vec3.fromValues(0.0, 0.0, 0.0),
+            cameraPosition: vec3.fromValues(40, 40, 30),
+            uniformColor: vec3.fromValues(0.2, 0.1, 0.0),
+            baseHeight: vec3.fromValues(8, 8, 8),
+            density: vec3.fromValues(0.5, 0.5, 0.5),
+            fallOff: vec3.fromValues(0.5, 0.5, 0.5),
+        };
+
+        const pane = createPane(uniforms);
 
         const gl = canvas.getContext('webgl2');
 
@@ -251,6 +251,7 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         const FPS = 60;
         const FPSInv = 1.0 / FPS;
 
+        let timerId = 0;
         (function renderLoop() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clearDepth(1.0);
@@ -278,8 +279,17 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
                 gl.drawElements(gl.TRIANGLES, target.mesh.geomtry.triangles.length, gl.UNSIGNED_SHORT, 0);
             }
 
-            setTimeout(renderLoop, 1000 * FPSInv);
+            timerId = setTimeout(renderLoop, 1000 * FPSInv);
         })();
+        return () => {
+            if (timerId) {
+                clearTimeout(timerId);
+            }
+
+            if (pane) {
+                pane.dispose();
+            }
+        };
     }, []);
 
     return (
