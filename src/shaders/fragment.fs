@@ -13,24 +13,24 @@ out vec4 fragColor;
 uniform float u_time;
 uniform vec4 u_color;
 uniform vec3 u_cameraPosition;
-uniform float u_baseHeight;
-uniform float u_density;
-uniform float u_fallOff;
-uniform float u_uniformDensity;
+uniform vec3 u_baseHeight;
+uniform vec3 u_density;
+uniform vec3 u_fallOff;
+uniform vec3 u_uniformDensity;
 uniform vec3 u_uniformColor;
 
-float heightFogTransmittance(
+vec3 heightFogTransmittance(
   vec3 cameraPosition,
   vec3 view,
   float distance,
-  float baseHeight,
-  float density,
-  float fallOff,
+  vec3 baseHeight,
+  vec3 density,
+  vec3 fallOff,
   vec3 dir,
-  float uniformDensity
+  vec3 uniformDensity
 ) {
-  float fv = fallOff * dot(dir, view);
-  float opticalDepth = density / fv * exp(-fallOff * (dot(cameraPosition, dir) - baseHeight)) * (exp(fv * distance) - baseHeight) + uniformDensity * distance;
+  vec3 fv = fallOff * dot(dir, view);
+  vec3 opticalDepth = density / fv * exp(-fallOff * (dot(cameraPosition, dir) - baseHeight)) * (exp(fv * distance) - baseHeight) + uniformDensity * distance;
   return exp(-opticalDepth);
 }
 
@@ -45,7 +45,7 @@ void main() {
   vec3 view = normalize(u_cameraPosition - v_out.positionWS);
   float distance = length(v_out.positionWS - u_cameraPosition);
 
-  float trans = heightFogTransmittance(
+  vec3 trans = heightFogTransmittance(
     u_cameraPosition,
     view,
     distance,

@@ -144,10 +144,57 @@ const animateCubes = (renderTargets: RenderTarget[], time: number) => {
     }
 }
 
+const createPane = (uniforms: Uniforms) => {
+    const bindRGB = (pane: Pane, vec: vec3, name: string, min: number, max: number) => {
+        const params = {
+            R: vec[0],
+            G: vec[1],
+            B: vec[2],
+        }
+        const folder = pane.addFolder({
+            title: name,
+            expanded: true,
+        });
+        folder.addBinding(params, 'R', { min, max }).on('change', (ev) => {
+            vec[0] = ev.value;
+        });
+        folder.addBinding(params, 'G', { min, max }).on('change', (ev) => {
+            vec[1] = ev.value;
+        });
+        folder.addBinding(params, 'B', { min, max }).on('change', (ev) => {
+            vec[2] = ev.value;
+        });
+    };
+
+    const pane = new Pane({
+        title: 'Parameters',
+        expanded: true,
+    });
+
+    bindRGB(pane, uniforms.baseHeight, 'Base Height', 0, 20);
+    bindRGB(pane, uniforms.density, 'Density', 0, 1);
+    bindRGB(pane, uniforms.fallOff, 'Fall Off', 0.001, 2);
+    bindRGB(pane, uniforms.uniformDensity, 'Uniform Density', 0, 0.1);
+
+    const PARAMS = {
+        fogColor: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
+        cameraPosition: { x: uniforms.cameraPosition[0], y: uniforms.cameraPosition[1], z: uniforms.cameraPosition[2] },
+    };
+
+    pane.addBinding(PARAMS, 'fogColor', { color: { type: 'float' } }).on('change', (ev) => {
+        const color = ev.value;
+        vec3.set(uniforms.uniformColor, color.r, color.g, color.b);
+    });
+
+    pane.addBinding(PARAMS, 'cameraPosition').on('change', (ev) => {
+        const position = ev.value;
+        vec3.set(uniforms.cameraPosition, position.x, position.y, position.z);
+    });
+}
+
 const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const pane = new Pane();
     let uniforms: Uniforms = {
         modelMatrix: mat4.create(),
         viewMatrix: mat4.create(),
@@ -165,61 +212,15 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         mvpMatrix: mat4.create(),
         time: 0.0,
         color: vec4.fromValues(1, 1, 1, 1),
-        uniformDensity: 0.0,
+        uniformDensity: vec3.fromValues(0.0, 0.0, 0.0),
         cameraPosition: vec3.fromValues(40, 40, 30),
-        uniformColor: vec3.fromValues(0.5, 0.5, 0.5),
-        baseHeight: 8.0,
-        density: 0.1,
-        fallOff: 0.5,
+        uniformColor: vec3.fromValues(0.2, 0.1, 0.0),
+        baseHeight: vec3.fromValues(8, 8, 8),
+        density: vec3.fromValues(0.5, 0.5, 0.5),
+        fallOff: vec3.fromValues(0.5, 0.5, 0.5),
     };
 
-
-    const PARAMS = {
-        baseHeight: uniforms.baseHeight,
-        density: uniforms.density,
-        fallOff: uniforms.fallOff,
-        uniformDensity: uniforms.uniformDensity,
-        fogColor: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
-        cameraPosition: { x: uniforms.cameraPosition[0], y: uniforms.cameraPosition[1], z: uniforms.cameraPosition[2] },
-    };
-
-    pane.addBinding(PARAMS, 'baseHeight',
-        { min: 0, max: 20 }
-    ).on('change', (ev) => {
-        const baseHeight = ev.value;
-        uniforms.baseHeight = baseHeight;
-    });
-
-    pane.addBinding(PARAMS, 'density',
-        { min: 0, max: 1 }
-    ).on('change', (ev) => {
-        const density = ev.value;
-        uniforms.density = density;
-    });
-
-    pane.addBinding(PARAMS, 'fallOff',
-        { min: 0.001, max: 2 }
-    ).on('change', (ev) => {
-        const fallOff = ev.value;
-        uniforms.fallOff = fallOff;
-    });
-
-    pane.addBinding(PARAMS, 'uniformDensity',
-        { min: 0, max: 0.1 }
-    ).on('change', (ev) => {
-        const density = ev.value;
-        uniforms.uniformDensity = density;
-    });
-
-    pane.addBinding(PARAMS, 'fogColor', { color: { type: 'float' } }).on('change', (ev) => {
-        const color = ev.value;
-        vec3.set(uniforms.uniformColor, color.r, color.g, color.b);
-    });
-
-    pane.addBinding(PARAMS, 'cameraPosition').on('change', (ev) => {
-        const position = ev.value;
-        vec3.set(uniforms.cameraPosition, position.x, position.y, position.z);
-    });
+    createPane(uniforms);
 
     // to avoid render loop run twice (becase of strict mode)
     var initialized = false;

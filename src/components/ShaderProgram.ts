@@ -10,11 +10,11 @@ export type Uniforms = {
     time: number,
     color: vec4,
     cameraPosition: vec3,
-    uniformDensity: number,
+    uniformDensity: vec3,
     uniformColor: vec3,
-    baseHeight: number,
-    density: number,
-    fallOff: number,
+    baseHeight: vec3,
+    density: vec3,
+    fallOff: vec3,
 }
 
 export type ShaderProgram = {
@@ -110,10 +110,10 @@ export const bindUniforms = (gl: WebGL2RenderingContext,
     gl.uniformMatrix4fv(uniformLocations.modelMatrix, false, uniforms.modelMatrix);
     gl.uniform4fv(uniformLocations.color, uniforms.color);
     gl.uniform1f(uniformLocations.time, uniforms.time);
-    gl.uniform1f(uniformLocations.uniformDensity, uniforms.uniformDensity);
+    gl.uniform3fv(uniformLocations.uniformDensity, uniforms.uniformDensity);
     gl.uniform3fv(uniformLocations.cameraPosition, uniforms.cameraPosition);
     gl.uniform3fv(uniformLocations.uniformColor, uniforms.uniformColor);
-    gl.uniform1f(uniformLocations.baseHight, uniforms.baseHeight);
-    gl.uniform1f(uniformLocations.density, uniforms.density);
-    gl.uniform1f(uniformLocations.fallOff, uniforms.fallOff);
+    gl.uniform3fv(uniformLocations.baseHight, uniforms.baseHeight);
+    gl.uniform3fv(uniformLocations.density, uniforms.density);
+    gl.uniform3fv(uniformLocations.fallOff, uniforms.fallOff);
 }
