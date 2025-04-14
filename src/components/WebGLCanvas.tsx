@@ -64,23 +64,18 @@ const bindAttributes = (gl: WebGL2RenderingContext, program: ShaderProgram, rend
     gl.enableVertexAttribArray(attributeLocations.uv);
 }
 
-type Camera = {
-    position: vec3,
-    lookAt: vec3,
-    up: vec3,
-}
-
 type Scene = {
     renderTargets: RenderTarget[],
-    camera:
-
-    Camera,
 }
 
 type Parameters = {
     uniforms: Uniforms,
     camera: {
         position: vec3,
+        width: number,
+        height: number,
+        size: number,
+        lookAt: vec3,
     },
     cubeScale: number,
 }
@@ -116,16 +111,12 @@ const createScene = (gl: WebGL2RenderingContext): Scene => {
 
     return {
         renderTargets,
-        camera: {
-            position: vec3.fromValues(42, 40, 30),
-            lookAt: vec3.fromValues(0, 8, 0),
-            up: vec3.fromValues(0, 1, 0),
-        }
     }
 }
 
 const updateUniforms = (renderTarget: RenderTarget,
-    uniforms: Uniforms) => {
+    params: Parameters) => {
+    const uniforms = params.uniforms;
     const modelMatrix = uniforms.modelMatrix;
     const mvpMatrix = uniforms.mvpMatrix;
     const viewMatrix = uniforms.viewMatrix;
@@ -190,27 +181,70 @@ const createPane = (params: Parameters): Pane => {
     bindRGB(pane, uniforms.uniformDensity, 'Uniform Density', 0, 0.1, 0.001);
 
     const PARAMS = {
-        fogColor: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
+        color: { r: uniforms.uniformColor[0], g: uniforms.uniformColor[1], b: uniforms.uniformColor[2] },
         cubeScale: params.cubeScale,
-        cameraPosition: { x: uniforms.cameraPosition[0], y: uniforms.cameraPosition[1], z: uniforms.cameraPosition[2] },
     };
 
-    pane.addBinding(PARAMS, 'fogColor', {
+    pane.addBinding(PARAMS, 'color', {
         color: { type: 'float' },
-        label: 'Fog Color',
     }).on('change', (ev) => {
         const color = ev.value;
         vec3.set(uniforms.uniformColor, color.r, color.g, color.b);
     });
 
-    pane.addBinding(PARAMS, 'cameraPosition', {
+    const cameraFolder = pane.addFolder({
+        title: 'Camera',
+        expanded: true,
+    });
+
+    const camera = params.camera;
+    const CAMERA_PARAMS = {
+        position: { x: camera.position[0], y: camera.position[1], z: camera.position[2] },
+        width: camera.width,
+        height: camera.height,
+        size: camera.size,
+        lookAt: { x: camera.lookAt[0], y: camera.lookAt[1], z: camera.lookAt[2] },
+    };
+
+    cameraFolder.addBinding(CAMERA_PARAMS, 'position', {
         x: { min: -100, max: 100, step: 1 },
         y: { min: 10, max: 100, step: 1 },
         z: { min: -100, max: 100, step: 1 },
-        label: 'Camera',
     }).on('change', (ev) => {
         const position = ev.value;
-        vec3.set(uniforms.cameraPosition, position.x, position.y, position.z);
+        vec3.set(params.camera.position, position.x, position.y, position.z);
+    });
+
+    cameraFolder.addBinding(CAMERA_PARAMS, 'lookAt', {
+        x: { min: -100, max: 100, step: 1 },
+        y: { min: 0, max: 100, step: 1 },
+        z: { min: -100, max: 100, step: 1 },
+    }).on('change', (ev) => {
+        const lookAt = ev.value;
+        vec3.set(params.camera.lookAt, lookAt.x, lookAt.y, lookAt.z);
+    });
+
+    cameraFolder.addBinding(CAMERA_PARAMS, 'width', {
+        min: 0,
+        max: 1,
+        step: 0.01,
+    }).on('change', (ev) => {
+        params.camera.width = ev.value;
+    });
+    cameraFolder.addBinding(CAMERA_PARAMS, 'height', {
+        min: 0,
+        max: 1,
+        step: 0.01,
+    }).on('change', (ev) => {
+        params.camera.height = ev.value;
+    });
+
+    cameraFolder.addBinding(CAMERA_PARAMS, 'size', {
+        min: 0,
+        max: 100,
+        step: 1,
+    }).on('change', (ev) => {
+        params.camera.size = ev.value;
     });
 
     pane.addBinding(PARAMS, 'cubeScale', {
@@ -253,10 +287,10 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
                 -100, 1000
             ),
             mvpMatrix: mat4.create(),
+            cameraPosition: vec3.create(),
             time: 0.0,
             color: vec4.fromValues(1, 1, 1, 1),
             uniformDensity: vec3.fromValues(0.0, 0.0, 0.0),
-            cameraPosition: vec3.fromValues(40, 40, 30),
             uniformColor: vec3.fromValues(1, 0.8, 0.5),
             baseHeight: vec3.fromValues(3, 5, 8),
             density: vec3.fromValues(0.5, 0.5, 0.5),
@@ -266,7 +300,11 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
         const params: Parameters = {
             uniforms: uniforms,
             camera: {
-                position: uniforms.cameraPosition,
+                position: vec3.fromValues(40, 40, 30),
+                width: 1,
+                height: 1,
+                size: 10,
+                lookAt: vec3.fromValues(0, 8, 0),
             },
             cubeScale: 0.5,
         };
@@ -304,19 +342,27 @@ const WebGLCanvas: React.FC<WebGLCanvasProps> = ({ width = 1080, height = 720 })
 
             gl.useProgram(shaderProgram.program);
 
-            // update camera
-            // vec3.copy(uniforms.cameraPosition, scene.camera.position);
             mat4.lookAt(uniforms.viewMatrix,
-                uniforms.cameraPosition,
-                scene.camera.lookAt,
-                scene.camera.up
+                params.camera.position,
+                params.camera.lookAt,
+                vec3.fromValues(0, 1, 0)
+            );
+
+            vec3.copy(uniforms.cameraPosition, params.camera.position);
+
+            const w = params.camera.width * params.camera.size;
+            const h = params.camera.height * params.camera.size;
+            mat4.ortho(uniforms.projectionMatrix,
+                -w, w,
+                -h, h,
+                -100, 1000
             );
 
             animateCubes(renderTargets, params);
 
             for (const target of renderTargets) {
                 bindAttributes(gl, shaderProgram, target);
-                updateUniforms(target, uniforms);
+                updateUniforms(target, params);
                 bindUniforms(gl, shaderProgram, uniforms);
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, target.ibo);
                 gl.drawElements(gl.TRIANGLES, target.mesh.geomtry.triangles.length, gl.UNSIGNED_SHORT, 0);
