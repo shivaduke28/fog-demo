@@ -1,9 +1,9 @@
 {
-  "name": "fog-demo",
+  "name": "height-fog-sandbox",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://shivaduke28.github.io/fog-demo",
+  "homepage": "https://shivaduke28.github.io/height-fog-sandbox",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
