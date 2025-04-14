@@ -103,7 +103,7 @@ const createScene = (gl: WebGL2RenderingContext): Scene => {
 
     const cubeFlipped = flipNormal(cubeGeometry);
     const quadMesh = createMesh(cubeFlipped);
-    vec3.set(quadMesh.position, 0, 5, 0);
+    vec3.set(quadMesh.position, 0, 10, 0);
     vec3.set(quadMesh.scale, 20, 10, 20);
     vec4.set(quadMesh.color, 0.8, 0.8, 0.8, 1);
     const quadMeshRenderTarget = createRenderTarget(gl, quadMesh);
@@ -143,7 +143,7 @@ const animateCubes = (renderTargets: RenderTarget[], params: Parameters) => {
         scale[0] = cubeScale;
         scale[1] = Math.sin(time * 3 + cubeSeeds[i] * 10) * 1.0 + 9.0;
         scale[2] = cubeScale;
-        position[1] = scale[1] * 0.5;
+        position[1] = scale[1];
     }
 }
 
